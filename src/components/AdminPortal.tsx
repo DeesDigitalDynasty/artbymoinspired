@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Lock,
@@ -13,6 +13,7 @@ import {
   RotateCcw,
   LogOut,
   Eye,
+  EyeOff,
   Tag,
   Layers,
   Palette,
@@ -24,6 +25,7 @@ import {
   Moon,
   ShieldAlert,
   LifeBuoy,
+  HelpCircle,
 } from 'lucide-react';
 import {
   ArtworkItem,
@@ -31,11 +33,20 @@ import {
   GridPlacement,
 } from '../data/artworks';
 import { processUploadedImageFile } from '../utils/imageProcessor';
+import {
+  hashPassword,
+  hashRecoveryPhrase,
+  getInitialSetupToken,
+  DEFAULT_RECOVERY_QUESTION,
+  DEFAULT_PASSWORD_HASH,
+  DEFAULT_RECOVERY_HASH,
+} from '../utils/security';
 
 export interface AdminCredentials {
   username: string;
-  password: string;
-  recoveryPhrase?: string;
+  passwordHash: string;
+  recoveryQuestion: string;
+  recoveryPhraseHash: string;
   hasCustomizedCredentials?: boolean;
 }
 
@@ -45,8 +56,6 @@ export interface SocialLinks {
   twitter: string;
   behance: string;
 }
-
-export const DEFAULT_RECOVERY_PHRASE = 'sketching sanctuary 2020';
 
 interface AdminPortalProps {
   themeMode: 'ghost' | 'day';
@@ -83,9 +92,8 @@ const SUGGESTED_TAGS = [
   'Mask Study',
 ];
 
-function normalizePhrase(input: string): string {
-  return input.trim().toLowerCase().replace(/\s+/g, ' ');
-}
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_SECONDS = 30;
 
 export default function AdminPortal({
   themeMode,
@@ -111,11 +119,31 @@ export default function AdminPortal({
   // Login Form State
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
 
-  // Recovery Phrase Mode on Login Screen
+  // Brute-force rate-limiting state
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutRemaining, setLockoutRemaining] = useState(0);
+
+  useEffect(() => {
+    if (lockoutRemaining <= 0) return;
+    const timer = setInterval(() => {
+      setLockoutRemaining((prev) => {
+        if (prev <= 1) {
+          setFailedAttempts(0);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [lockoutRemaining]);
+
+  // Security Question Recovery Mode on Login Screen
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
-  const [recoveryPhraseInput, setRecoveryPhraseInput] = useState('');
+  const [recoveryAnswerInput, setRecoveryAnswerInput] = useState('');
+  const [showRecoveryAnswerInput, setShowRecoveryAnswerInput] = useState(false);
   const [recoveryNewUsername, setRecoveryNewUsername] = useState(
     credentials.username || 'travismo1998@gmail.com'
   );
@@ -125,8 +153,7 @@ export default function AdminPortal({
   // Determine whether Quick-Fill placeholder credentials should still be visible
   const showQuickFillOption =
     !credentials.hasCustomizedCredentials &&
-    credentials.username === 'travismo1998@gmail.com' &&
-    credentials.password === 'mo2026';
+    credentials.passwordHash === DEFAULT_PASSWORD_HASH;
 
   // Active Admin Tab: ONLY 'artworks' and 'security'
   const [activeTab, setActiveTab] = useState<'artworks' | 'security'>(
@@ -178,12 +205,15 @@ export default function AdminPortal({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmResetModal, setConfirmResetModal] = useState(false);
 
-  // Credentials Update State
+  // Credentials Update State (Never pre-fills plaintext passwords or answers)
   const [newUsername, setNewUsername] = useState(credentials.username);
-  const [newPassword, setNewPassword] = useState(credentials.password);
-  const [newRecoveryPhrase, setNewRecoveryPhrase] = useState(
-    credentials.recoveryPhrase || DEFAULT_RECOVERY_PHRASE
+  const [newPassword, setNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [newRecoveryQuestion, setNewRecoveryQuestion] = useState(
+    credentials.recoveryQuestion || DEFAULT_RECOVERY_QUESTION
   );
+  const [newRecoveryAnswer, setNewRecoveryAnswer] = useState('');
+  const [showNewRecoveryAnswer, setShowNewRecoveryAnswer] = useState(false);
   const [localSocials, setLocalSocials] = useState<SocialLinks>(socialLinks);
   const [credsSavedToast, setCredsSavedToast] = useState(false);
 
@@ -192,8 +222,26 @@ export default function AdminPortal({
     setTimeout(() => setStatusToast(''), 4200);
   };
 
+  const registerFailedAttempt = (
+    setErrorFn: (msg: string) => void,
+    msg: string
+  ) => {
+    const nextAttempts = failedAttempts + 1;
+    setFailedAttempts(nextAttempts);
+    if (nextAttempts >= MAX_FAILED_ATTEMPTS) {
+      setLockoutRemaining(LOCKOUT_SECONDS);
+      setErrorFn(
+        `Too many failed attempts. Login temporarily locked for ${LOCKOUT_SECONDS} seconds.`
+      );
+    } else {
+      setErrorFn(msg);
+    }
+  };
+
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (lockoutRemaining > 0) return;
+
     const cleanUser = loginUsername.trim().toLowerCase();
     const validUser = credentials.username.trim().toLowerCase();
     const matchesUsername =
@@ -201,51 +249,66 @@ export default function AdminPortal({
       (!credentials.hasCustomizedCredentials &&
         (cleanUser === 'mo' || cleanUser === 'travismo1998@gmail.com'));
 
-    if (matchesUsername && loginPassword === credentials.password) {
+    const candidateHash = hashPassword(loginPassword);
+
+    if (matchesUsername && candidateHash === credentials.passwordHash) {
       setLoginError('');
+      setFailedAttempts(0);
+      setLoginPassword('');
       onLoginSuccess();
     } else {
-      setLoginError(
-        'Invalid studio credentials. Check your username and password or use your Artist Recovery Phrase below.'
+      registerFailedAttempt(
+        setLoginError,
+        'Invalid studio credentials. Check your username and password or answer your security recovery question below.'
       );
     }
   };
 
   const handleRecoverySubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const entered = normalizePhrase(recoveryPhraseInput);
-    const savedPhrase = normalizePhrase(
-      credentials.recoveryPhrase || DEFAULT_RECOVERY_PHRASE
-    );
-    const defaultMasterPhrase = normalizePhrase(DEFAULT_RECOVERY_PHRASE);
+    if (lockoutRemaining > 0) return;
 
-    if (!entered || (entered !== savedPhrase && entered !== defaultMasterPhrase)) {
-      setRecoveryError(
-        'Recovery phrase did not match. Please enter your configured artist recovery phrase.'
+    const enteredHash = hashRecoveryPhrase(recoveryAnswerInput);
+    const savedHash = credentials.recoveryPhraseHash || DEFAULT_RECOVERY_HASH;
+
+    if (
+      !recoveryAnswerInput.trim() ||
+      (enteredHash !== savedHash && enteredHash !== DEFAULT_RECOVERY_HASH)
+    ) {
+      registerFailedAttempt(
+        setRecoveryError,
+        'Security answer did not match. Please enter the correct answer to your recovery question.'
       );
       return;
     }
 
-    if (!recoveryNewUsername.trim() || !recoveryNewPassword.trim()) {
-      setRecoveryError('Please provide a new username and password.');
+    if (!recoveryNewUsername.trim() || recoveryNewPassword.length < 4) {
+      setRecoveryError(
+        'Please provide a valid username and a new password (at least 4 characters).'
+      );
       return;
     }
 
     const updatedCreds: AdminCredentials = {
       username: recoveryNewUsername.trim(),
-      password: recoveryNewPassword,
-      recoveryPhrase: credentials.recoveryPhrase || DEFAULT_RECOVERY_PHRASE,
+      passwordHash: hashPassword(recoveryNewPassword),
+      recoveryQuestion:
+        credentials.recoveryQuestion || DEFAULT_RECOVERY_QUESTION,
+      recoveryPhraseHash: savedHash,
       hasCustomizedCredentials: true,
     };
 
     onUpdateCredentials(updatedCreds);
     setNewUsername(updatedCreds.username);
-    setNewPassword(updatedCreds.password);
+    setNewPassword('');
+    setRecoveryAnswerInput('');
+    setRecoveryNewPassword('');
     setRecoveryError('');
+    setFailedAttempts(0);
     setIsRecoveryMode(false);
     onLoginSuccess();
     triggerToast(
-      'Access recovered! Your new studio credentials have been saved and Quick-Fill is disabled.'
+      'Access recovered! Your new hashed studio credentials have been saved and Quick-Fill is permanently disabled.'
     );
   };
 
@@ -388,23 +451,45 @@ export default function AdminPortal({
 
   const handleCredentialsFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newUsername.trim() || !newPassword.trim()) return;
+    if (!newUsername.trim()) return;
+    // If artist only updated social links without changing credentials, save socials directly
+    if (
+      !newPassword.trim() &&
+      !newRecoveryAnswer.trim() &&
+      newUsername.trim() === credentials.username &&
+      newRecoveryQuestion.trim() ===
+        (credentials.recoveryQuestion || DEFAULT_RECOVERY_QUESTION)
+    ) {
+      onUpdateSocialLinks(localSocials);
+      setCredsSavedToast(true);
+      triggerToast('Social media links updated.');
+      setTimeout(() => setCredsSavedToast(false), 3000);
+      return;
+    }
     setShowConfirmCredsModal(true);
   };
 
   const confirmAndApplyCredentialUpdate = () => {
     const updatedCreds: AdminCredentials = {
       username: newUsername.trim(),
-      password: newPassword,
-      recoveryPhrase: newRecoveryPhrase.trim() || DEFAULT_RECOVERY_PHRASE,
+      passwordHash: newPassword.trim()
+        ? hashPassword(newPassword)
+        : credentials.passwordHash,
+      recoveryQuestion:
+        newRecoveryQuestion.trim() || DEFAULT_RECOVERY_QUESTION,
+      recoveryPhraseHash: newRecoveryAnswer.trim()
+        ? hashRecoveryPhrase(newRecoveryAnswer)
+        : credentials.recoveryPhraseHash || DEFAULT_RECOVERY_HASH,
       hasCustomizedCredentials: true,
     };
     onUpdateCredentials(updatedCreds);
     onUpdateSocialLinks(localSocials);
+    setNewPassword('');
+    setNewRecoveryAnswer('');
     setShowConfirmCredsModal(false);
     setCredsSavedToast(true);
     triggerToast(
-      'Credentials updated! The initial Quick-Fill login option has been permanently removed from the login page.'
+      'Credentials hashed & updated! The initial Quick-Fill login option has been permanently removed.'
     );
     setTimeout(() => setCredsSavedToast(false), 3500);
   };
@@ -460,7 +545,7 @@ export default function AdminPortal({
           </div>
         </div>
 
-        {/* Center Credentials or Recovery Card */}
+        {/* Center Credentials or Security Question Recovery Card */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -493,6 +578,7 @@ export default function AdminPortal({
                   <input
                     type="text"
                     required
+                    autoComplete="username"
                     placeholder="travismo1998@gmail.com"
                     value={loginUsername}
                     onChange={(e) => setLoginUsername(e.target.value)}
@@ -504,14 +590,31 @@ export default function AdminPortal({
                   <span className="block text-xs text-[var(--text-muted)] mb-2">
                     Studio Password
                   </span>
-                  <input
-                    type="password"
-                    required
-                    placeholder="••••••••"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    className="w-full px-4 py-3.5 text-sm text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[20px] border border-[var(--border-subtle)] focus:outline-none focus:border-[var(--border-strong)]"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showLoginPassword ? 'text' : 'password'}
+                      required
+                      autoComplete="current-password"
+                      placeholder="••••••••"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      className="w-full px-4 py-3.5 pr-11 text-sm text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[20px] border border-[var(--border-subtle)] focus:outline-none focus:border-[var(--border-strong)]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPassword((s) => !s)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+                      aria-label={
+                        showLoginPassword ? 'Hide password' : 'Show password'
+                      }
+                    >
+                      {showLoginPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </label>
 
                 {loginError && (
@@ -522,31 +625,32 @@ export default function AdminPortal({
 
                 <button
                   type="submit"
-                  className="w-full py-3.5 px-6 text-xs font-medium text-[var(--btn-primary-text)] bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover-bg)] hover:text-[var(--btn-primary-hover-text)] rounded-[22px] transition-colors cursor-pointer"
+                  disabled={lockoutRemaining > 0}
+                  className="w-full py-3.5 px-6 text-xs font-medium text-[var(--btn-primary-text)] bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover-bg)] hover:text-[var(--btn-primary-hover-text)] disabled:opacity-50 rounded-[22px] transition-colors cursor-pointer"
                 >
-                  Sign In to Admin Dashboard
+                  {lockoutRemaining > 0
+                    ? `Locked (${lockoutRemaining}s)`
+                    : 'Sign In to Admin Dashboard'}
                 </button>
               </form>
 
-              {/* Initial Setup Quick-Fill: Automatically removed once artist confirms & updates credentials */}
+              {/* Initial Setup Quick-Fill: Automatically removed once artist confirms & updates credentials. Never displays raw password in DOM. */}
               {showQuickFillOption && (
                 <div className="pt-5 border-t border-[var(--border-subtle)] flex items-center justify-between gap-4 text-xs text-[var(--text-muted)]">
                   <div>
                     <span className="block font-medium text-[var(--text-primary)]">
-                      Initial Studio Setup Credentials:
+                      First-Time Studio Setup
                     </span>
-                    <span className="font-mono-spec text-[11px]">
-                      {credentials.username} / {credentials.password}
-                    </span>
-                    <span className="block text-[10px] text-[var(--text-muted)] mt-0.5">
-                      Disappears automatically after you update your password.
+                    <span className="block text-[11px] text-[var(--text-muted)] mt-0.5">
+                      Use quick-fill once, then update your password to remove
+                      this option permanently.
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => {
                       setLoginUsername(credentials.username);
-                      setLoginPassword(credentials.password);
+                      setLoginPassword(getInitialSetupToken());
                       setLoginError('');
                     }}
                     className="px-3.5 py-2 rounded-[16px] bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--border-subtle)] hover:bg-[var(--bg-elevated-hover)] text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer"
@@ -556,7 +660,7 @@ export default function AdminPortal({
                 </div>
               )}
 
-              {/* Fallback Recovery Phrase Trigger */}
+              {/* Fallback Security Question Trigger */}
               <div className="pt-4 border-t border-[var(--border-subtle)] text-center">
                 <button
                   type="button"
@@ -568,12 +672,14 @@ export default function AdminPortal({
                   className="inline-flex items-center gap-1.5 text-xs text-[var(--text-accent)] hover:underline cursor-pointer"
                 >
                   <LifeBuoy className="w-3.5 h-3.5" />
-                  <span>Forgot credentials? Use artist recovery phrase</span>
+                  <span>
+                    Forgot credentials? Answer security recovery question
+                  </span>
                 </button>
               </div>
             </>
           ) : (
-            /* ARTIST RECOVERY PHRASE FORM */
+            /* ARTIST SECURITY QUESTION RECOVERY FORM */
             <div className="space-y-6">
               <div className="space-y-2 text-center">
                 <div className="w-12 h-12 rounded-[20px] bg-[var(--bg-elevated)] text-[var(--text-accent)] border border-[var(--border-subtle)] flex items-center justify-center mx-auto mb-4">
@@ -586,24 +692,50 @@ export default function AdminPortal({
                   Recover Artist Studio
                 </h2>
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed pt-1">
-                  Enter your secret artist recovery phrase to reset your
+                  Answer your security recovery question to reset your studio
                   credentials and unlock the Admin Dashboard.
                 </p>
               </div>
 
               <form onSubmit={handleRecoverySubmit} className="space-y-4">
+                <div className="p-4 rounded-[20px] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-1.5">
+                  <span className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-[var(--text-muted)]">
+                    <HelpCircle className="w-3.5 h-3.5 text-[var(--text-accent)]" />
+                    <span>Security Question</span>
+                  </span>
+                  <p className="font-editorial text-xl text-[var(--text-primary)]">
+                    {credentials.recoveryQuestion || DEFAULT_RECOVERY_QUESTION}
+                  </p>
+                </div>
+
                 <label className="block">
                   <span className="block text-xs text-[var(--text-muted)] mb-1.5">
-                    Artist Recovery Phrase
+                    Your Answer
                   </span>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Enter your secret recovery phrase..."
-                    value={recoveryPhraseInput}
-                    onChange={(e) => setRecoveryPhraseInput(e.target.value)}
-                    className="w-full px-4 py-3 text-sm text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[18px] border border-[var(--border-subtle)] focus:outline-none focus:border-[var(--border-strong)]"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showRecoveryAnswerInput ? 'text' : 'password'}
+                      required
+                      placeholder="Enter your answer..."
+                      value={recoveryAnswerInput}
+                      onChange={(e) => setRecoveryAnswerInput(e.target.value)}
+                      className="w-full px-4 py-3 pr-11 text-sm text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[18px] border border-[var(--border-subtle)] focus:outline-none focus:border-[var(--border-strong)]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRecoveryAnswerInput((s) => !s)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+                      aria-label={
+                        showRecoveryAnswerInput ? 'Hide answer' : 'Show answer'
+                      }
+                    >
+                      {showRecoveryAnswerInput ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </label>
 
                 <label className="block">
@@ -642,9 +774,12 @@ export default function AdminPortal({
                 <div className="flex flex-col gap-2.5 pt-2">
                   <button
                     type="submit"
-                    className="w-full py-3.5 px-6 text-xs font-medium text-[var(--btn-primary-text)] bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover-bg)] hover:text-[var(--btn-primary-hover-text)] rounded-[20px] transition-colors cursor-pointer"
+                    disabled={lockoutRemaining > 0}
+                    className="w-full py-3.5 px-6 text-xs font-medium text-[var(--btn-primary-text)] bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover-bg)] hover:text-[var(--btn-primary-hover-text)] disabled:opacity-50 rounded-[20px] transition-colors cursor-pointer"
                   >
-                    Verify Phrase & Reset Credentials
+                    {lockoutRemaining > 0
+                      ? `Locked (${lockoutRemaining}s)`
+                      : 'Verify Answer & Reset Credentials'}
                   </button>
 
                   <button
@@ -1423,20 +1558,21 @@ export default function AdminPortal({
         )}
 
         {/* ===================================================================
-            TAB 2: ADMIN CREDENTIALS, RECOVERY PHRASE & SOCIAL LINKS
+            TAB 2: ADMIN CREDENTIALS, SECURITY QUESTION & SOCIAL LINKS
         ==================================================================== */}
         {activeTab === 'security' && (
           <div className="max-w-xl mx-auto rounded-[28px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-8 md:p-10 space-y-8 shadow-xl">
             <div>
               <p className="text-xs uppercase tracking-widest text-[var(--text-muted)] mb-1">
-                Access Control, Recovery & Socials
+                Access Control, Cryptographic Hashing & Socials
               </p>
               <h2 className="font-editorial text-3xl text-[var(--text-primary)]">
-                Studio Credentials & Recovery Phrase
+                Studio Credentials & Security Question
               </h2>
               <p className="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
-                Update your login credentials, configure your secret fallback
-                recovery phrase, and manage your footer social media URLs.
+                All passwords and security recovery answers are hashed with
+                salted SHA-256 before storage so plaintext secrets are never
+                stored in your browser or source repository.
               </p>
             </div>
 
@@ -1446,13 +1582,13 @@ export default function AdminPortal({
               <div className="space-y-1">
                 <p className="font-medium text-[var(--text-primary)]">
                   {credentials.hasCustomizedCredentials
-                    ? 'Quick-Fill Login Placeholder is Disabled'
-                    : 'Initial Quick-Fill Login Placeholder is Currently Active'}
+                    ? 'Quick-Fill Login Placeholder is Permanently Disabled'
+                    : 'Initial Quick-Fill Login Placeholder is Active'}
                 </p>
                 <p className="text-[var(--text-muted)] leading-relaxed">
                   {credentials.hasCustomizedCredentials
-                    ? 'Your custom credentials are active. Visitors clicking the footer login link cannot see or quick-fill your credentials.'
-                    : 'Once you confirm and save new credentials below, the initial Quick-Fill helper on the login screen will be permanently removed so curious visitors cannot log in.'}
+                    ? 'Your custom SHA-256 hashed credentials are active. Visitors clicking the footer login link cannot see or quick-fill your credentials.'
+                    : 'Confirming a new password below permanently removes the initial Quick-Fill helper from the login screen.'}
                 </p>
               </div>
             </div>
@@ -1474,44 +1610,88 @@ export default function AdminPortal({
 
                 <label className="block">
                   <span className="block text-xs text-[var(--text-muted)] mb-1.5">
-                    Admin Password
+                    New Admin Password
                   </span>
-                  <input
-                    type="text"
-                    required
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-4 py-3 text-sm font-mono-spec text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[18px] border border-[var(--border-subtle)]"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      placeholder="Enter new password to update..."
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-4 py-3 pr-10 text-sm font-mono-spec text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[18px] border border-[var(--border-subtle)]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword((s) => !s)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+                      aria-label={
+                        showNewPassword ? 'Hide password' : 'Show password'
+                      }
+                    >
+                      {showNewPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </label>
               </div>
 
-              {/* Fallback Recovery Phrase Configuration */}
-              <div className="p-4 rounded-[20px] bg-[var(--bg-input)] border border-[var(--border-subtle)] space-y-2">
+              {/* Fallback Security Question & Hashed Answer Configuration */}
+              <div className="p-5 rounded-[20px] bg-[var(--bg-input)] border border-[var(--border-subtle)] space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-[var(--text-primary)] flex items-center gap-1.5">
+                    <HelpCircle className="w-3.5 h-3.5 text-[var(--text-accent)]" />
+                    <span>Fallback Security Recovery Question</span>
+                  </span>
+                  <span className="text-[11px] text-[var(--text-muted)]">
+                    Answer stored as SHA-256 hash
+                  </span>
+                </div>
+
                 <label className="block">
-                  <span className="flex items-center justify-between text-xs font-medium text-[var(--text-primary)] mb-1.5">
-                    <span className="flex items-center gap-1.5">
-                      <LifeBuoy className="w-3.5 h-3.5 text-[var(--text-accent)]" />
-                      <span>Fallback Artist Recovery Phrase</span>
-                    </span>
-                    <span className="text-[11px] text-[var(--text-muted)] font-normal">
-                      Used if you ever forget your password
-                    </span>
+                  <span className="block text-[11px] text-[var(--text-muted)] mb-1">
+                    Recovery Question
                   </span>
                   <input
                     type="text"
                     required
-                    value={newRecoveryPhrase}
-                    onChange={(e) => setNewRecoveryPhrase(e.target.value)}
-                    placeholder="e.g. sketching sanctuary 2020"
-                    className="w-full px-4 py-2.5 text-xs font-mono-spec text-[var(--text-primary)] bg-[var(--bg-surface)] rounded-[14px] border border-[var(--border-subtle)]"
+                    value={newRecoveryQuestion}
+                    onChange={(e) => setNewRecoveryQuestion(e.target.value)}
+                    className="w-full px-4 py-2.5 text-xs text-[var(--text-primary)] bg-[var(--bg-surface)] rounded-[14px] border border-[var(--border-subtle)]"
                   />
                 </label>
-                <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-                  Keep this phrase safe. You can enter it on the Admin Login
-                  screen under &ldquo;Forgot credentials? Use artist recovery
-                  phrase&rdquo; to reset your login anytime.
-                </p>
+
+                <label className="block">
+                  <span className="block text-[11px] text-[var(--text-muted)] mb-1">
+                    Update Recovery Answer (Leave blank to keep current hashed
+                    answer)
+                  </span>
+                  <div className="relative">
+                    <input
+                      type={showNewRecoveryAnswer ? 'text' : 'password'}
+                      value={newRecoveryAnswer}
+                      onChange={(e) => setNewRecoveryAnswer(e.target.value)}
+                      placeholder="Current answer is hashed & active · Enter new answer to change..."
+                      className="w-full px-4 py-2.5 pr-10 text-xs font-mono-spec text-[var(--text-primary)] bg-[var(--bg-surface)] rounded-[14px] border border-[var(--border-subtle)]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewRecoveryAnswer((s) => !s)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+                      aria-label={
+                        showNewRecoveryAnswer ? 'Hide answer' : 'Show answer'
+                      }
+                    >
+                      {showNewRecoveryAnswer ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </label>
               </div>
 
               <div className="pt-4 border-t border-[var(--border-subtle)] space-y-4">
@@ -1638,13 +1818,13 @@ export default function AdminPortal({
                   Confirm Studio Credentials
                 </h3>
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                  Confirming this update will save your new username (
+                  Confirming this update will hash and save your updated
+                  credentials for{' '}
                   <span className="font-mono-spec text-[var(--text-primary)]">
                     {newUsername}
-                  </span>
-                  ), password, and recovery phrase, and will permanently remove
-                  the Quick-Fill placeholder from the Admin Login page so
-                  visitors cannot use it.
+                  </span>{' '}
+                  and permanently remove the Quick-Fill option from the Admin
+                  Login page.
                 </p>
               </div>
 

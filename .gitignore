@@ -1,8 +1,61 @@
+# Dependencies
 node_modules/
+.pnp
+.pnp.js
+
+# Build & Production Output
 build/
 dist/
+dist-ssr/
+*.local
 coverage/
-.DS_Store
-*.log
-.env*
+
+# Environment Variables & Secrets (NEVER commit real keys)
+.env
+.env.*
 !.env.example
+
+# Firebase, GCP & OAuth Configs / Keys (Prevents API key & OAuth secret leaks)
+firebase-applet-config.json
+firebase_applet_config.xml
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+service-account*.json
+*credentials*.json
+*secret*.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+
+# AI Studio Internal Artifacts & Metadata
+.aistudio/
+
+# Editor & OS Files
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs & Runtime Caches
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.cache/
+.temp/
+.tmp/
+.vercel/
+.netlify/

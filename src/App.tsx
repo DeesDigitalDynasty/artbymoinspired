@@ -44,10 +44,17 @@ import {
 import AdminPortal, {
   AdminCredentials,
   SocialLinks,
-  DEFAULT_RECOVERY_PHRASE,
 } from './components/AdminPortal';
+import {
+  DEFAULT_PASSWORD_HASH,
+  DEFAULT_RECOVERY_QUESTION,
+  DEFAULT_RECOVERY_HASH,
+  hashPassword,
+} from './utils/security';
 
-const STORAGE_KEY_ADMIN_CREDS = 'artbymo_admin_creds_v3';
+const STORAGE_KEY_ADMIN_CREDS = 'artbymo_admin_creds_v5';
+const LEGACY_STORAGE_KEY_V4 = 'artbymo_admin_creds_v4';
+const LEGACY_STORAGE_KEY_V3 = 'artbymo_admin_creds_v3';
 const STORAGE_KEY_ADMIN_SESSION = 'artbymo_admin_session_v3';
 const STORAGE_KEY_SOCIAL_LINKS = 'artbymo_social_links_v3';
 const STORAGE_KEY_THEME_MODE = 'artbymo_theme_mode_v1';
@@ -224,27 +231,62 @@ export default function App() {
     };
   }, []);
 
-  // Admin Credentials & Session State
+  // Admin Credentials & Session State (Salted SHA-256 hashes only; migrates & wipes any legacy plaintext)
   const [adminCredentials, setAdminCredentials] = useState<AdminCredentials>(
     () => {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY_ADMIN_CREDS);
-        if (saved) {
-          const parsed = JSON.parse(saved);
+        const savedV5 = localStorage.getItem(STORAGE_KEY_ADMIN_CREDS);
+        if (savedV5) {
+          const parsed = JSON.parse(savedV5);
           return {
             username: parsed.username || STUDIO_EMAIL,
-            password: parsed.password || 'mo2026',
-            recoveryPhrase: parsed.recoveryPhrase || DEFAULT_RECOVERY_PHRASE,
+            passwordHash: parsed.passwordHash || DEFAULT_PASSWORD_HASH,
+            recoveryQuestion:
+              parsed.recoveryQuestion || DEFAULT_RECOVERY_QUESTION,
+            recoveryPhraseHash:
+              parsed.recoveryPhraseHash || DEFAULT_RECOVERY_HASH,
             hasCustomizedCredentials: Boolean(parsed.hasCustomizedCredentials),
           };
+        }
+
+        // Migrate any legacy v4 or v3 storage to v5 with the NYSC cat question & SHA-256 hash
+        const legacyRaw =
+          localStorage.getItem(LEGACY_STORAGE_KEY_V4) ||
+          localStorage.getItem(LEGACY_STORAGE_KEY_V3);
+        if (legacyRaw) {
+          const parsedLegacy = JSON.parse(legacyRaw);
+          const migrated: AdminCredentials = {
+            username: parsedLegacy.username || STUDIO_EMAIL,
+            passwordHash: parsedLegacy.passwordHash
+              ? parsedLegacy.passwordHash
+              : parsedLegacy.password
+                ? hashPassword(parsedLegacy.password)
+                : DEFAULT_PASSWORD_HASH,
+            recoveryQuestion: DEFAULT_RECOVERY_QUESTION,
+            recoveryPhraseHash: DEFAULT_RECOVERY_HASH,
+            hasCustomizedCredentials: Boolean(
+              parsedLegacy.hasCustomizedCredentials
+            ),
+          };
+          localStorage.setItem(
+            STORAGE_KEY_ADMIN_CREDS,
+            JSON.stringify(migrated)
+          );
+          localStorage.removeItem(LEGACY_STORAGE_KEY_V4);
+          localStorage.removeItem(LEGACY_STORAGE_KEY_V3);
+          return migrated;
         }
       } catch {
         // Fallback
       }
       return {
-        username: STUDIO_EMAIL,
-        password: 'mo2026',
-        recoveryPhrase: DEFAULT_RECOVERY_PHRASE,
+        username:
+          (typeof import.meta !== 'undefined' &&
+            import.meta.env?.VITE_ADMIN_INITIAL_USER) ||
+          STUDIO_EMAIL,
+        passwordHash: DEFAULT_PASSWORD_HASH,
+        recoveryQuestion: DEFAULT_RECOVERY_QUESTION,
+        recoveryPhraseHash: DEFAULT_RECOVERY_HASH,
         hasCustomizedCredentials: false,
       };
     }

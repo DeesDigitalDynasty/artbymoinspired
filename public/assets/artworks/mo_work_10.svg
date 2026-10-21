@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+  <rect width="800" height="1000" fill="#FFFFFF"/>
+  <!-- Black Bob Hair -->
+  <path d="M225,455 C205,215 290,130 400,130 C510,130 595,215 575,455 C540,310 260,310 225,455 Z" fill="#0A0A0A"/>
+  <!-- Face & Collared Shirt with Pencils -->
+  <g stroke="#0A0A0A" stroke-width="6" fill="#FFFFFF" stroke-linejoin="round">
+    <ellipse cx="400" cy="390" rx="125" ry="155"/>
+    <!-- Eyes & Brows -->
+    <ellipse cx="348" cy="375" rx="28" ry="13"/>
+    <circle cx="348" cy="375" r="8" fill="#0A0A0A"/>
+    <ellipse cx="452" cy="375" rx="28" ry="13"/>
+    <circle cx="452" cy="375" r="8" fill="#0A0A0A"/>
+    <path d="M358,480 Q400,465 442,480 Q400,505 358,480 Z" fill="#0A0A0A"/>
+    <!-- Tailored Shirt & Collar -->
+    <path d="M165,980 L215,645 L400,605 L585,645 L635,980 Z"/>
+    <polygon points="325,585 400,695 285,685" fill="#0A0A0A"/>
+    <polygon points="475,585 400,695 515,685" fill="#0A0A0A"/>
+    <!-- Breast Pocket with Drafting Pencils -->
+    <rect x="465" y="775" width="95" height="110"/>
+    <rect x="485" y="730" width="14" height="45" fill="#0A0A0A"/>
+    <rect x="515" y="720" width="14" height="55"/>
+  </g>
+  <text x="645" y="885" font-family="serif" font-size="28" fill="#0A0A0A">Mo / 25</text>
+</svg>

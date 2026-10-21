@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 960" width="960" height="960">
+  <rect width="960" height="960" fill="#F2EFE8"/>
+  <!-- Layered raw linen collage blocks -->
+  <rect x="85" y="85" width="440" height="520" rx="24" fill="#DFD9CD"/>
+  <rect x="390" y="290" width="485" height="585" rx="24" fill="#3B5658" opacity="0.92"/>
+  <rect x="160" y="450" width="380" height="410" rx="24" fill="#879D90" opacity="0.82"/>
+  <!-- Organic botanical / anatomical line work -->
+  <path d="M350,790 C365,640 445,510 560,370 C625,290 675,215 710,145" fill="none" stroke="#F6F4EF" stroke-width="4" stroke-linecap="round"/>
+  <path d="M475,510 C410,480 355,495 315,540" fill="none" stroke="#1C2422" stroke-width="3" stroke-linecap="round"/>
+  <path d="M535,420 C600,395 660,415 700,460" fill="none" stroke="#F6F4EF" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="290" cy="260" r="88" fill="#B55D4C" opacity="0.82"/>
+  <circle cx="645" cy="645" r="115" fill="none" stroke="#E6DFD3" stroke-width="2"/>
+</svg>

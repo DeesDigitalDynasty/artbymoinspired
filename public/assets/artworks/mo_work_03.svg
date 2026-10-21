@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800" width="1000" height="800">
+  <!-- Deep Cobalt Blue Ground -->
+  <rect width="1000" height="800" fill="#0B3CE8"/>
+  <!-- Cloud-like Rose Pink Hair Halo -->
+  <path d="M275,410 C220,330 250,210 340,185 C385,115 515,110 575,165 C675,175 735,275 685,375 C715,445 660,520 595,515 Z" fill="#F29CE3" stroke="#0A0A0A" stroke-width="6"/>
+  <!-- Teal Neck & Shoulders -->
+  <path d="M415,565 L415,720 L300,800 L690,800 L565,710 L565,565 Z" fill="#1EB8B8" stroke="#0A0A0A" stroke-width="6"/>
+  <!-- Split Face: Left Violet, Right Tangerine Orange -->
+  <path d="M325,355 C325,225 490,225 490,225 L490,625 C385,625 325,510 325,355 Z" fill="#9D34E8" stroke="#0A0A0A" stroke-width="6"/>
+  <path d="M490,225 C490,225 655,225 655,355 C655,510 595,625 490,625 Z" fill="#FA7E0A" stroke="#0A0A0A" stroke-width="6"/>
+  <!-- Eyes -->
+  <ellipse cx="405" cy="375" rx="45" ry="20" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="5"/>
+  <circle cx="405" cy="375" r="12" fill="#0A0A0A"/>
+  <ellipse cx="575" cy="375" rx="45" ry="20" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="5"/>
+  <circle cx="575" cy="375" r="12" fill="#0A0A0A"/>
+  <!-- Calligraphic Spiral Cheek Marks -->
+  <path d="M350,455 C375,435 410,455 395,480 C380,500 355,485 370,468" fill="none" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+  <path d="M630,455 C605,435 570,455 585,480 C600,500 625,485 610,468" fill="none" stroke="#0A0A0A" stroke-width="4" stroke-linecap="round"/>
+  <!-- Two-Tone Lips -->
+  <path d="M435,545 Q490,515 545,545 Q490,590 435,545 Z" fill="#FA7E0A" stroke="#0A0A0A" stroke-width="5"/>
+  <path d="M490,528 Q520,530 545,545 Q520,568 490,568 Z" fill="#9D34E8" stroke="#0A0A0A" stroke-width="5"/>
+</svg>

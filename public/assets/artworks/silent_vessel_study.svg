@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 850" width="1100" height="850">
+  <defs>
+    <linearGradient id="sageField" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E4EBE6"/>
+      <stop offset="50%" stop-color="#CFDCD4"/>
+      <stop offset="100%" stop-color="#B3C6BC"/>
+    </linearGradient>
+    <linearGradient id="deepSlate" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E2B2C"/>
+      <stop offset="100%" stop-color="#0F1718"/>
+    </linearGradient>
+  </defs>
+  <rect width="1100" height="850" fill="url(#sageField)"/>
+  <!-- Horizon & Atmospheric strata -->
+  <rect x="90" y="95" width="920" height="660" fill="#F4F2EC" rx="12"/>
+  <path d="M90,460 Q360,390 610,445 T1010,410 L1010,755 L90,755 Z" fill="#6E877B" opacity="0.55"/>
+  <path d="M90,545 Q420,490 730,555 T1010,520 L1010,755 L90,755 Z" fill="url(#deepSlate)" opacity="0.9"/>
+  <!-- Sculptural monolithic vessels -->
+  <rect x="260" y="215" width="145" height="390" rx="72" fill="#2C4446"/>
+  <rect x="465" y="165" width="175" height="465" rx="87" fill="#D59B72" opacity="0.88"/>
+  <circle cx="755" cy="340" r="105" fill="#EDEAE2" stroke="#1E2B2C" stroke-width="2.5"/>
+  <circle cx="755" cy="340" r="42" fill="#879D90"/>
+  <!-- Minimalist gold leaf line accent -->
+  <path d="M210,630 L890,220" stroke="#C8A97E" stroke-width="3" opacity="0.85"/>
+</svg>

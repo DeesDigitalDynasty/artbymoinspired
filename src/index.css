@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+@layer base {
+  :root,
+  [data-theme="ghost"] {
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --bg-canvas: #0B0F0E;
+    --bg-footer: #080B0A;
+    --bg-header: rgba(11, 15, 14, 0.85);
+    --bg-surface: rgba(18, 24, 23, 0.90);
+    --bg-surface-solid: #121817;
+    --bg-surface-subtle: rgba(15, 21, 20, 0.85);
+    --bg-elevated: #1C2624;
+    --bg-elevated-hover: #273532;
+    --bg-input: #0B0F0E;
+
+    --text-primary: #EEF2F0;
+    --text-secondary: #C4D0CB;
+    --text-muted: #9BA8A3;
+    --text-accent: #A3B8AC;
+
+    --border-subtle: rgba(135, 157, 144, 0.24);
+    --border-strong: rgba(163, 184, 172, 0.55);
+
+    --btn-primary-bg: #A3B8AC;
+    --btn-primary-text: #0B0F0E;
+    --btn-primary-hover-bg: #EEF2F0;
+    --btn-primary-hover-text: #0B0F0E;
+
+    --btn-secondary-bg: #253330;
+    --btn-secondary-text: #EEF2F0;
+  }
+
+  [data-theme="day"] {
+    --bg-canvas: #F6F4EE;
+    --bg-footer: #EAE6DC;
+    --bg-header: rgba(246, 244, 238, 0.88);
+    --bg-surface: rgba(255, 255, 255, 0.94);
+    --bg-surface-solid: #FFFFFF;
+    --bg-surface-subtle: #EFECE3;
+    --bg-elevated: #E3EAE6;
+    --bg-elevated-hover: #D2DDD7;
+    --bg-input: #FAF8F3;
+
+    --text-primary: #14201D;
+    --text-secondary: #2B3B36;
+    --text-muted: #4E635C;
+    --text-accent: #264A3F;
+
+    --border-subtle: rgba(43, 59, 54, 0.18);
+    --border-strong: rgba(38, 74, 63, 0.45);
+
+    --btn-primary-bg: #1F3A32;
+    --btn-primary-text: #F6F4EE;
+    --btn-primary-hover-bg: #14201D;
+    --btn-primary-hover-text: #FFFFFF;
+
+    --btn-secondary-bg: #1F3A32;
+    --btn-secondary-text: #F6F4EE;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    transition: background-color 0.35s ease, color 0.35s ease;
+  }
+
+  h1, h2, h3, .font-editorial {
+    font-family: var(--font-serif);
+  }
+
+  .font-mono-spec {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Subtle custom scrollbar for expandable story cards */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(135, 157, 144, 0.35);
+  border-radius: 9999px;
+}

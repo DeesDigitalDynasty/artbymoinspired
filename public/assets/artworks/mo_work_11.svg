@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+  <rect width="800" height="1000" fill="#FAF8F5"/>
+  <!-- Horizontal Black Stripes -->
+  <g stroke="#0A0A0A" stroke-width="10">
+    <line x1="60" y1="180" x2="740" y2="180"/>
+    <line x1="60" y1="300" x2="740" y2="300"/>
+    <line x1="60" y1="420" x2="740" y2="420"/>
+    <line x1="60" y1="540" x2="740" y2="540"/>
+    <line x1="60" y1="660" x2="740" y2="660"/>
+    <line x1="60" y1="780" x2="740" y2="780"/>
+  </g>
+  <!-- Elongated White Mask & Split Cobalt/Emerald Neck -->
+  <g stroke="#0A0A0A" stroke-width="6">
+    <polygon points="365,710 400,710 400,920 345,920" fill="#1D4ED8"/>
+    <polygon points="400,710 435,710 455,920 400,920" fill="#15803D"/>
+    <path d="M270,280 C270,110 530,110 530,280 C530,550 470,730 400,730 C330,730 270,550 270,280 Z" fill="#FAF8F5"/>
+    <!-- Offset Green & Blue Eyes -->
+    <ellipse cx="340" cy="340" rx="38" ry="18" fill="#15803D"/>
+    <ellipse cx="460" cy="380" rx="38" ry="18" fill="#1D4ED8"/>
+    <!-- Cheek Marks II -->
+    <line x1="325" y1="440" x2="325" y2="475"/>
+    <line x1="342" y1="440" x2="342" y2="475"/>
+    <line x1="458" y1="460" x2="458" y2="495"/>
+    <line x1="475" y1="460" x2="475" y2="495"/>
+    <!-- Carmine Red Lips -->
+    <path d="M355,615 Q400,590 445,615 Q400,650 355,615 Z" fill="#E11D2A"/>
+  </g>
+</svg>

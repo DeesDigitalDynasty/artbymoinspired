@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+  <defs>
+    <pattern id="glyphGrid" width="100" height="100" patternUnits="userSpaceOnUse">
+      <rect width="100" height="100" fill="none" stroke="#0A0A0A" stroke-width="2"/>
+      <path d="M25,30 Q50,15 75,30 M30,65 L70,65 M50,40 L50,80" fill="none" stroke="#0A0A0A" stroke-width="3" stroke-linecap="round"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="1000" fill="#FAF9F5"/>
+  <rect width="800" height="1000" fill="url(#glyphGrid)"/>
+  <!-- Striped Nemes Headdress & Portrait -->
+  <g stroke="#0A0A0A" stroke-width="6" fill="#FAF9F5">
+    <path d="M150,880 L210,320 C235,160 565,160 590,320 L650,880 Z"/>
+    <!-- Headdress Horizontal Stripes -->
+    <line x1="198" y1="420" x2="602" y2="420" stroke-width="14"/>
+    <line x1="185" y1="520" x2="615" y2="520" stroke-width="14"/>
+    <line x1="172" y1="620" x2="628" y2="620" stroke-width="14"/>
+    <line x1="160" y1="720" x2="640" y2="720" stroke-width="14"/>
+    <!-- Central Face -->
+    <ellipse cx="400" cy="480" rx="135" ry="185" fill="#FAF9F5"/>
+    <ellipse cx="340" cy="445" rx="35" ry="16"/>
+    <circle cx="340" cy="445" r="10" fill="#0A0A0A"/>
+    <ellipse cx="460" cy="445" rx="35" ry="16"/>
+    <circle cx="460" cy="445" r="10" fill="#0A0A0A"/>
+    <path d="M400,445 L385,535 L415,535" fill="none"/>
+    <path d="M355,585 Q400,565 445,585 Q400,615 355,585 Z" fill="#0A0A0A"/>
+  </g>
+</svg>

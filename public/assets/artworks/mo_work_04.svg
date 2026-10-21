@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+  <rect width="800" height="1000" fill="#FAF9F6"/>
+  <g stroke="#0A0A0A" stroke-width="6" fill="none">
+    <!-- Crown inscribed MO25 -->
+    <polygon points="275,205 310,95 390,155 450,85 510,155 575,95 555,225" fill="#FAF9F6" stroke-linejoin="round"/>
+    <text x="415" y="192" font-family="monospace" font-size="28" font-weight="bold" fill="#0A0A0A" stroke="none">MO25</text>
+    <!-- Central & Side Interlocking Cubist Faces -->
+    <path d="M160,360 C160,210 640,210 640,360 C640,620 520,760 400,760 C280,760 160,620 160,360 Z" fill="#FAF9F6"/>
+    <!-- Black & Patterned Hair Masses -->
+    <path d="M160,360 C220,220 350,220 400,290 C450,220 580,220 640,360 C560,290 240,290 160,360 Z" fill="#0A0A0A"/>
+    <!-- Three Eyes (Cubist Triad) -->
+    <ellipse cx="275" cy="410" rx="52" ry="24" fill="#FAF9F6"/>
+    <circle cx="275" cy="410" r="15" fill="#0A0A0A"/>
+    <ellipse cx="400" cy="365" rx="48" ry="22" fill="#FAF9F6"/>
+    <circle cx="400" cy="365" r="14" fill="#0A0A0A"/>
+    <ellipse cx="525" cy="410" rx="52" ry="24" fill="#FAF9F6"/>
+    <circle cx="525" cy="410" r="15" fill="#0A0A0A"/>
+    <!-- Geometric Nose & Cheek Divisions -->
+    <polyline points="400,388 365,525 435,525 400,388"/>
+    <path d="M180,480 Q280,450 365,525"/>
+    <path d="M620,480 Q520,450 435,525"/>
+    <!-- Striped Sculptural Lips -->
+    <path d="M315,610 Q400,565 485,610 Q400,665 315,610 Z" fill="#0A0A0A"/>
+    <line x1="315" y1="610" x2="485" y2="610" stroke="#FAF9F6" stroke-width="4"/>
+    <!-- Neck with Geometric Wave & Dot Bands -->
+    <rect x="315" y="745" width="170" height="190" fill="#FAF9F6"/>
+    <line x1="315" y1="805" x2="485" y2="805"/>
+    <line x1="315" y1="865" x2="485" y2="865"/>
+  </g>
+</svg>

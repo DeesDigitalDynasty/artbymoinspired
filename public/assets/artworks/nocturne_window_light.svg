@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200" width="900" height="1200">
+  <defs>
+    <radialGradient id="digitalAura" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#D9E4DF"/>
+      <stop offset="45%" stop-color="#7A9A95"/>
+      <stop offset="80%" stop-color="#2D4749"/>
+      <stop offset="100%" stop-color="#162122"/>
+    </radialGradient>
+    <linearGradient id="prismBeam" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F6F4EF" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#E2B49A" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#5E837E" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="1200" fill="url(#digitalAura)"/>
+  <!-- Window light shaft echoing the hero portrait's shadow play -->
+  <polygon points="0,120 900,430 900,820 0,510" fill="url(#prismBeam)"/>
+  <polygon points="0,600 900,910 900,1080 0,770" fill="url(#prismBeam)" opacity="0.55"/>
+  <!-- Digital contour rings -->
+  <ellipse cx="450" cy="600" rx="260" ry="370" fill="none" stroke="#F6F4EF" stroke-width="1.75" opacity="0.5"/>
+  <ellipse cx="450" cy="600" rx="190" ry="270" fill="none" stroke="#E2B49A" stroke-width="1.5" opacity="0.7"/>
+  <!-- Figurative silhouette in shadow -->
+  <path d="M295,1080 C305,820 355,720 450,720 C545,720 595,820 605,1080 Z" fill="#141C1B" opacity="0.88"/>
+  <circle cx="450" cy="540" r="108" fill="#141C1B" opacity="0.92"/>
+  <path d="M380,520 Q450,485 520,520" fill="none" stroke="#E2B49A" stroke-width="3" opacity="0.9"/>
+</svg>

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+  <!-- Stained-glass lilac frame -->
+  <rect width="800" height="1000" fill="#D5AEEC" stroke="#0A0A0A" stroke-width="14"/>
+  <!-- Outer frame geometric cuts -->
+  <line x1="0" y1="0" x2="72" y2="72" stroke="#0A0A0A" stroke-width="8"/>
+  <line x1="800" y1="0" x2="728" y2="72" stroke="#0A0A0A" stroke-width="8"/>
+  <line x1="0" y1="1000" x2="72" y2="928" stroke="#0A0A0A" stroke-width="8"/>
+  <line x1="800" y1="1000" x2="728" y2="928" stroke="#0A0A0A" stroke-width="8"/>
+  <line x1="410" y1="0" x2="410" y2="72" stroke="#0A0A0A" stroke-width="8"/>
+  <line x1="250" y1="928" x2="220" y2="1000" stroke="#0A0A0A" stroke-width="8"/>
+  <!-- Inner canvas -->
+  <g transform="translate(72, 72)">
+    <rect width="656" height="856" fill="#FAF8F5" stroke="#0A0A0A" stroke-width="8"/>
+    <!-- Left magenta & blue background planes -->
+    <polygon points="0,0 240,0 130,360 0,310" fill="#B724A8" stroke="#0A0A0A" stroke-width="8"/>
+    <polygon points="0,310 130,360 155,610 0,680" fill="#1C5AE3" stroke="#0A0A0A" stroke-width="8"/>
+    <polygon points="0,680 155,610 210,856 0,856" fill="#0B84F3" stroke="#0A0A0A" stroke-width="8"/>
+    <!-- Right yellow & green planes -->
+    <polygon points="480,0 656,0 656,370 500,340" fill="#B724A8" stroke="#0A0A0A" stroke-width="8"/>
+    <polygon points="500,340 656,370 656,670 465,615" fill="#F6D51F" stroke="#0A0A0A" stroke-width="8"/>
+    <polygon points="465,615 656,670 656,856 445,856" fill="#0B8A28" stroke="#0A0A0A" stroke-width="8"/>
+    <!-- Central hair dome (Crimson Red) -->
+    <path d="M125,295 C140,65 515,65 530,295 C415,175 240,175 125,295 Z" fill="#EC111A" stroke="#0A0A0A" stroke-width="8"/>
+    <!-- Upper forehead (Yellow & Blue split) -->
+    <path d="M135,290 C240,185 335,195 335,345 L135,345 Z" fill="#F6D51F" stroke="#0A0A0A" stroke-width="8"/>
+    <path d="M335,205 C430,205 515,245 525,365 L335,345 Z" fill="#0B84F3" stroke="#0A0A0A" stroke-width="8"/>
+    <!-- Left cheek (Green) & Right cheek (Orange/Magenta) -->
+    <path d="M135,345 L335,345 L335,595 C210,595 145,495 135,345 Z" fill="#0B8A28" stroke="#0A0A0A" stroke-width="8"/>
+    <path d="M335,345 L525,365 C520,515 445,605 335,595 Z" fill="#FC6E08" stroke="#0A0A0A" stroke-width="8"/>
+    <!-- Lower jaw & chin -->
+    <path d="M175,525 C225,675 435,675 485,525 C435,625 225,625 175,525 Z" fill="#B724A8" stroke="#0A0A0A" stroke-width="8"/>
+    <!-- Neck & shoulders -->
+    <polygon points="210,635 335,645 335,856 175,856" fill="#FC6E08" stroke="#0A0A0A" stroke-width="8"/>
+    <polygon points="335,645 450,635 485,856 335,856" fill="#EC111A" stroke="#0A0A0A" stroke-width="8"/>
+    <!-- Eyes -->
+    <ellipse cx="230" cy="365" rx="46" ry="22" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="7"/>
+    <circle cx="230" cy="365" r="14" fill="#0A0A0A"/>
+    <ellipse cx="430" cy="365" rx="46" ry="22" fill="#FFFFFF" stroke="#0A0A0A" stroke-width="7"/>
+    <circle cx="430" cy="365" r="14" fill="#0A0A0A"/>
+    <!-- Nose & Lips -->
+    <path d="M335,310 L300,485 L365,485 Z" fill="#0B8A28" stroke="#0A0A0A" stroke-width="7"/>
+    <path d="M265,555 Q335,520 405,555 Q335,605 265,555 Z" fill="#EC111A" stroke="#0A0A0A" stroke-width="7"/>
+    <line x1="265" y1="555" x2="405" y2="555" stroke="#0A0A0A" stroke-width="6"/>
+  </g>
+</svg>

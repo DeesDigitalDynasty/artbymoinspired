@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+  <defs>
+    <pattern id="redTally" width="75" height="65" patternUnits="userSpaceOnUse">
+      <line x1="12" y1="18" x2="36" y2="14" stroke="#E11D2A" stroke-width="4" stroke-linecap="round"/>
+      <line x1="14" y1="26" x2="38" y2="22" stroke="#E11D2A" stroke-width="4" stroke-linecap="round"/>
+      <line x1="45" y1="44" x2="66" y2="48" stroke="#E11D2A" stroke-width="4" stroke-linecap="round"/>
+      <line x1="43" y1="52" x2="64" y2="56" stroke="#E11D2A" stroke-width="4" stroke-linecap="round"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="1000" fill="#FAF9F5"/>
+  <rect width="800" height="1000" fill="url(#redTally)"/>
+  <!-- Braided black oval hair crown -->
+  <g fill="#0A0A0A">
+    <ellipse cx="215" cy="490" rx="52" ry="86"/>
+    <ellipse cx="195" cy="360" rx="55" ry="78" transform="rotate(-15 195 360)"/>
+    <ellipse cx="255" cy="240" rx="64" ry="75" transform="rotate(-35 255 240)"/>
+    <ellipse cx="395" cy="185" rx="85" ry="58"/>
+    <ellipse cx="540" cy="240" rx="64" ry="75" transform="rotate(35 540 240)"/>
+    <ellipse cx="600" cy="360" rx="55" ry="78" transform="rotate(15 600 360)"/>
+    <ellipse cx="585" cy="490" rx="52" ry="86"/>
+    <!-- Central head & shoulders -->
+    <ellipse cx="400" cy="465" rx="165" ry="225"/>
+    <path d="M235,960 C245,730 315,675 400,675 C485,675 555,730 565,960 Z"/>
+  </g>
+  <!-- White arched brows -->
+  <path d="M265,365 Q325,315 375,365" fill="none" stroke="#FAF9F5" stroke-width="8" stroke-linecap="round"/>
+  <path d="M425,365 Q475,315 535,365" fill="none" stroke="#FAF9F5" stroke-width="8" stroke-linecap="round"/>
+  <!-- Eyes with yellow stippled under-lid -->
+  <path d="M270,420 Q320,455 370,420 Z" fill="#EAB308"/>
+  <path d="M430,420 Q480,455 530,420 Z" fill="#EAB308"/>
+  <ellipse cx="320" cy="410" rx="46" ry="18" fill="#FAF9F5"/>
+  <circle cx="320" cy="410" r="13" fill="#0A0A0A"/>
+  <ellipse cx="480" cy="410" rx="46" ry="18" fill="#FAF9F5"/>
+  <circle cx="480" cy="410" r="13" fill="#0A0A0A"/>
+  <!-- Red vertical cheek/nose stripes -->
+  <g stroke="#E11D2A" stroke-width="4" stroke-linecap="round">
+    <line x1="388" y1="365" x2="375" y2="510"/>
+    <line x1="400" y1="360" x2="400" y2="515"/>
+    <line x1="412" y1="365" x2="425" y2="510"/>
+  </g>
+  <!-- Bold crimson lips -->
+  <path d="M325,585 C355,550 445,550 475,585 C445,635 355,635 325,585 Z" fill="#E11D2A" stroke="#FAF9F5" stroke-width="3"/>
+  <line x1="330" y1="585" x2="470" y2="585" stroke="#0A0A0A" stroke-width="4"/>
+</svg>

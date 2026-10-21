@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1050" width="800" height="1050">
+  <defs>
+    <pattern id="stippleCrown" width="14" height="14" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="2" fill="#0A0A0A"/>
+      <circle cx="11" cy="10" r="1.6" fill="#0A0A0A"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="1050" fill="#FAF9F5"/>
+  <!-- Stippled Buzzcut Portrait -->
+  <g stroke="#0A0A0A" stroke-width="6" fill="#FAF9F5">
+    <ellipse cx="355" cy="360" rx="155" ry="175" fill="url(#stippleCrown)"/>
+    <path d="M210,410 C210,255 500,255 500,410 C500,625 435,745 355,745 C275,745 210,625 210,410 Z"/>
+    <!-- Razor-Sharp Winged Eyeliner -->
+    <path d="M245,455 Q295,425 330,455 L230,440 Z" fill="#0A0A0A"/>
+    <path d="M380,455 Q425,425 465,455 L485,440 Z" fill="#0A0A0A"/>
+    <ellipse cx="290" cy="460" rx="34" ry="15"/>
+    <circle cx="290" cy="460" r="10" fill="#0A0A0A"/>
+    <ellipse cx="420" cy="460" rx="34" ry="15"/>
+    <circle cx="420" cy="460" r="10" fill="#0A0A0A"/>
+    <!-- Pendulum Drop Earrings -->
+    <line x1="195" y1="530" x2="195" y2="660"/>
+    <circle cx="195" cy="675" r="18" fill="#0A0A0A"/>
+    <line x1="515" y1="530" x2="515" y2="660"/>
+    <circle cx="515" cy="675" r="18" fill="#0A0A0A"/>
+    <!-- Bold Glossy Lips -->
+    <path d="M305,635 Q355,605 405,635 Q355,675 305,635 Z" fill="#0A0A0A"/>
+  </g>
+  <!-- Vertical Red-Offset Statement Type -->
+  <g font-family="sans-serif" font-weight="900" font-size="64" letter-spacing="6">
+    <text x="646" y="264" fill="#E11D2A" writing-mode="tb">STATEMENT</text>
+    <text x="640" y="260" fill="#0A0A0A" writing-mode="tb">STATEMENT</text>
+  </g>
+</svg>

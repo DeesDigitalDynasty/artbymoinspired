@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" width="1200" height="900">
+  <defs>
+    <linearGradient id="mistyTeal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E2E30"/>
+      <stop offset="50%" stop-color="#355052"/>
+      <stop offset="100%" stop-color="#6B857C"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#mistyTeal)"/>
+  <!-- Generative fluid wave ribbons -->
+  <path d="M0,280 C320,160 580,440 900,300 C1050,230 1140,260 1200,290 L1200,900 L0,900 Z" fill="#879D90" opacity="0.28"/>
+  <path d="M0,470 C290,360 640,610 960,450 C1090,385 1150,410 1200,440 L1200,900 L0,900 Z" fill="#E6E1D6" opacity="0.18"/>
+  <path d="M0,640 C380,530 710,740 1200,590 L1200,900 L0,900 Z" fill="#F6F4EF" opacity="0.9"/>
+  <!-- Luminous sun disk -->
+  <circle cx="820" cy="270" r="110" fill="#F3E9D7" opacity="0.92"/>
+  <circle cx="820" cy="270" r="165" fill="none" stroke="#F3E9D7" stroke-width="1.5" opacity="0.4"/>
+  <circle cx="340" cy="520" r="65" fill="#B0414E" opacity="0.85"/>
+</svg>

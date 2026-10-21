@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" width="900" height="900">
+  <!-- Warm Amber Pastel Ground -->
+  <rect width="900" height="900" fill="#FBF09C"/>
+  <!-- Flowing Wave Hair & Portrait (Mo20) -->
+  <g stroke="#0A0A0A" stroke-width="5" fill="none" stroke-linecap="round">
+    <path d="M120,900 C130,450 220,140 450,140 C680,140 770,450 780,900"/>
+    <path d="M160,900 C170,480 250,180 450,180 C650,180 730,480 740,900"/>
+    <path d="M200,900 C210,510 280,220 450,220 C620,220 690,510 700,900"/>
+    <!-- Face Contour -->
+    <ellipse cx="450" cy="440" rx="145" ry="185" fill="#FBF09C"/>
+    <!-- Eyes & Brows -->
+    <path d="M345,375 Q385,350 420,375"/>
+    <path d="M480,375 Q515,350 555,375"/>
+    <ellipse cx="385" cy="405" rx="34" ry="15"/>
+    <circle cx="385" cy="405" r="9" fill="#0A0A0A"/>
+    <ellipse cx="515" cy="405" rx="34" ry="15"/>
+    <circle cx="515" cy="405" r="9" fill="#0A0A0A"/>
+    <!-- Nose Ring & Lips -->
+    <path d="M450,410 L438,495 L465,495"/>
+    <circle cx="452" cy="508" r="8"/>
+    <path d="M405,548 Q450,528 495,548 Q450,578 405,548 Z"/>
+    <!-- Cheek Marks -->
+    <line x1="325" y1="455" x2="355" y2="465"/>
+    <line x1="325" y1="470" x2="355" y2="480"/>
+    <line x1="575" y1="455" x2="545" y2="465"/>
+    <line x1="575" y1="470" x2="545" y2="480"/>
+    <text x="640" y="835" font-family="serif" font-style="italic" font-size="34" fill="#0A0A0A" stroke="none">Mo20</text>
+  </g>
+</svg>

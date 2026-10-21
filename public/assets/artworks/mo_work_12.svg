@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1150" width="800" height="1150">
+  <rect width="800" height="1150" fill="#FFFFFF"/>
+  <g fill="#0A0A0A" font-family="monospace" text-anchor="middle">
+    <text x="400" y="135" font-size="28" letter-spacing="4">VII</text>
+    <text x="400" y="210" font-size="24" letter-spacing="2">CHAPTER 7: LONG TIME ON A GHOST</text>
+  </g>
+  <!-- Floating Clouds & Fractured Heart Balloon -->
+  <g stroke="#0A0A0A" stroke-width="4" fill="#FFFFFF">
+    <path d="M160,440 C130,440 120,405 150,395 C165,365 215,365 230,395 C260,400 255,440 225,440 Z"/>
+    <path d="M560,640 C530,640 520,605 550,595 C565,565 615,565 630,595 C660,600 655,640 625,640 Z"/>
+    <!-- Heart Balloon -->
+    <path d="M400,585 C310,510 285,415 340,375 C375,350 400,385 400,385 C400,385 425,350 460,375 C515,415 490,510 400,585 Z"/>
+    <polyline points="385,380 410,435 390,485 415,540" fill="none"/>
+    <path d="M400,585 C395,670 415,730 390,810" fill="none"/>
+  </g>
+  <text x="400" y="965" font-family="monospace" font-size="22" letter-spacing="2" fill="#0A0A0A" text-anchor="middle">"I DON'T WANT TO REMEMBER IT."</text>
+  <text x="680" y="1080" font-family="serif" font-size="24" fill="#0A0A0A">Mo / 25</text>
+</svg>

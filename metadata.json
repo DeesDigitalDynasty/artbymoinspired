@@ -1,0 +1,6 @@
+{
+  "name": "ArtbyMo",
+  "description": "ArtbyMo is a minimalist digital and physical art exhibition portfolio for Mo, featuring an overlapping CSS Grid masonry gallery and curatorial archive.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1050" width="800" height="1050">
+  <!-- Framed Gallery Border -->
+  <rect width="800" height="1050" fill="#2A2421"/>
+  <rect x="36" y="36" width="728" height="978" fill="#FAF8F5"/>
+  <!-- Elongated Modernist Mask Visage -->
+  <g stroke="#0A0A0A" stroke-width="6">
+    <!-- Magenta Forehead & Nose Bridge -->
+    <path d="M335,175 Q400,155 465,175 L425,575 L375,575 Z" fill="#C822A3"/>
+    <!-- Elongated Face Contour -->
+    <path d="M275,260 C275,130 525,130 525,260 C525,580 465,780 400,780 C335,780 275,580 275,260 Z" fill="none"/>
+    <!-- Red Left Eyelid & Emerald Right Eyelid -->
+    <path d="M295,345 Q340,305 380,345 Z" fill="#E31C25"/>
+    <path d="M420,345 Q460,305 505,345 Z" fill="#15803D"/>
+    <!-- Two-Tone Lips (Red & Cobalt) -->
+    <path d="M350,670 Q400,645 450,670 Z" fill="#E31C25"/>
+    <path d="M350,670 Q400,705 450,670 Z" fill="#1D4ED8"/>
+    <!-- Elongated Neck -->
+    <line x1="375" y1="775" x2="365" y2="960"/>
+    <line x1="425" y1="775" x2="435" y2="960"/>
+  </g>
+  <text x="580" y="920" font-family="serif" font-style="italic" font-size="32" fill="#0A0A0A">Mo</text>
+</svg>

@@ -26,13 +26,19 @@ import {
   ShieldAlert,
   LifeBuoy,
   HelpCircle,
+  LayoutTemplate,
+  FileText,
 } from 'lucide-react';
 import {
   ArtworkItem,
   ArtworkCategory,
   GridPlacement,
 } from '../data/artworks';
-import { processUploadedImageFile } from '../utils/imageProcessor';
+import {
+  processUploadedImageFile,
+  SiteContent,
+  DEFAULT_SITE_CONTENT,
+} from '../utils/imageProcessor';
 import {
   hashPassword,
   hashRecoveryPhrase,
@@ -53,6 +59,8 @@ export interface AdminCredentials {
 export interface SocialLinks {
   instagram: string;
   whatsapp: string;
+  tiktok: string;
+  facebook: string;
   twitter: string;
   behance: string;
 }
@@ -69,12 +77,15 @@ interface AdminPortalProps {
   onLogout: () => void;
   onCloseAdminView: () => void;
   draftArtworks: ArtworkItem[];
+  draftSiteContent: SiteContent;
   hasUnpublishedChanges: boolean;
   onUpdateDraftArtwork: (id: string, updates: Partial<ArtworkItem>) => void;
   onAddDraftArtwork: (newWork: ArtworkItem) => void;
   onDeleteDraftArtwork: (id: string) => void;
   onMoveDraftArtwork: (index: number, direction: -1 | 1) => void;
+  onUpdateDraftSiteContent: (updates: Partial<SiteContent>) => void;
   onResetArtworks: () => void;
+  onResetSiteContent: () => void;
   onSaveDraftChanges: () => void;
   onPublishToLiveSite: () => void;
 }
@@ -107,12 +118,15 @@ export default function AdminPortal({
   onLogout,
   onCloseAdminView,
   draftArtworks,
+  draftSiteContent,
   hasUnpublishedChanges,
   onUpdateDraftArtwork,
   onAddDraftArtwork,
   onDeleteDraftArtwork,
   onMoveDraftArtwork,
+  onUpdateDraftSiteContent,
   onResetArtworks,
+  onResetSiteContent,
   onSaveDraftChanges,
   onPublishToLiveSite,
 }: AdminPortalProps) {
@@ -145,7 +159,7 @@ export default function AdminPortal({
   const [recoveryAnswerInput, setRecoveryAnswerInput] = useState('');
   const [showRecoveryAnswerInput, setShowRecoveryAnswerInput] = useState(false);
   const [recoveryNewUsername, setRecoveryNewUsername] = useState(
-    credentials.username || 'travismo1998@gmail.com'
+    credentials.username || 'artbymoinspired@gmail.com'
   );
   const [recoveryNewPassword, setRecoveryNewPassword] = useState('');
   const [recoveryError, setRecoveryError] = useState('');
@@ -155,10 +169,10 @@ export default function AdminPortal({
     !credentials.hasCustomizedCredentials &&
     credentials.passwordHash === DEFAULT_PASSWORD_HASH;
 
-  // Active Admin Tab: ONLY 'artworks' and 'security'
-  const [activeTab, setActiveTab] = useState<'artworks' | 'security'>(
-    'artworks'
-  );
+  // Active Admin Tab: 'artworks' | 'frontend' | 'security'
+  const [activeTab, setActiveTab] = useState<
+    'artworks' | 'frontend' | 'security'
+  >('artworks');
 
   // Save & Publish Confirmation Modal State
   const [showPublishPromptModal, setShowPublishPromptModal] = useState(false);
@@ -247,7 +261,9 @@ export default function AdminPortal({
     const matchesUsername =
       cleanUser === validUser ||
       (!credentials.hasCustomizedCredentials &&
-        (cleanUser === 'mo' || cleanUser === 'travismo1998@gmail.com'));
+        (cleanUser === 'mo' ||
+          cleanUser === 'artbymoinspired@gmail.com' ||
+          cleanUser === 'travismo1998@gmail.com'));
 
     const candidateHash = hashPassword(loginPassword);
 
@@ -357,6 +373,27 @@ export default function AdminPortal({
     }
   };
 
+  const handleSiteImageUpload = async (
+    field:
+      | 'mainHeroImage'
+      | 'smallHeroImage'
+      | 'aboutLeftImage'
+      | 'aboutRightImage',
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const { dataUrl } = await processUploadedImageFile(file, 1600);
+      onUpdateDraftSiteContent({ [field]: dataUrl });
+      triggerToast(
+        'Front-end image updated in Admin Draft. Click Save Changes to save or publish to the live site.'
+      );
+    } catch {
+      triggerToast('Could not process uploaded image.');
+    }
+  };
+
   const handleAddArtworkToDraft = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newWorkForm.imageUrl) {
@@ -452,7 +489,6 @@ export default function AdminPortal({
   const handleCredentialsFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUsername.trim()) return;
-    // If artist only updated social links without changing credentials, save socials directly
     if (
       !newPassword.trim() &&
       !newRecoveryAnswer.trim() &&
@@ -566,7 +602,7 @@ export default function AdminPortal({
                 </h1>
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed pt-1">
                   Enter your studio credentials to upload new artworks manually,
-                  manage tags, and publish updates to the live exhibition.
+                  edit front-end sections, and publish updates to the live site.
                 </p>
               </div>
 
@@ -579,7 +615,7 @@ export default function AdminPortal({
                     type="text"
                     required
                     autoComplete="username"
-                    placeholder="travismo1998@gmail.com"
+                    placeholder="artbymoinspired@gmail.com"
                     value={loginUsername}
                     onChange={(e) => setLoginUsername(e.target.value)}
                     className="w-full px-4 py-3.5 text-sm text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[20px] border border-[var(--border-subtle)] focus:outline-none focus:border-[var(--border-strong)]"
@@ -634,7 +670,7 @@ export default function AdminPortal({
                 </button>
               </form>
 
-              {/* Initial Setup Quick-Fill: Automatically removed once artist confirms & updates credentials. Never displays raw password in DOM. */}
+              {/* Initial Setup Quick-Fill: Automatically removed once artist confirms & updates credentials */}
               {showQuickFillOption && (
                 <div className="pt-5 border-t border-[var(--border-subtle)] flex items-center justify-between gap-4 text-xs text-[var(--text-muted)]">
                   <div>
@@ -828,7 +864,7 @@ export default function AdminPortal({
             )}
           </div>
 
-          {/* Admin Section Tabs: Strictly Artworks & Tags + Credentials */}
+          {/* Admin Section Tabs: Artworks & Tags | Front-End & Hero Editor | Credentials & Socials */}
           <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-[var(--bg-surface)] rounded-[22px] border border-[var(--border-subtle)]">
             {(
               [
@@ -836,6 +872,11 @@ export default function AdminPortal({
                   id: 'artworks',
                   label: `Artworks & Tags (${draftArtworks.length})`,
                   icon: Upload,
+                },
+                {
+                  id: 'frontend',
+                  label: 'Front-End & Hero Editor',
+                  icon: LayoutTemplate,
                 },
                 {
                   id: 'security',
@@ -851,7 +892,7 @@ export default function AdminPortal({
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`inline-flex items-center gap-2 px-5 py-2 text-xs font-medium rounded-[18px] transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                  className={`inline-flex items-center gap-2 px-4 sm:px-5 py-2 text-xs font-medium rounded-[18px] transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                     active
                       ? 'bg-[var(--btn-secondary-bg)] text-[var(--btn-secondary-text)] shadow-xs'
                       : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
@@ -959,7 +1000,7 @@ export default function AdminPortal({
         </AnimatePresence>
 
         {/* ===================================================================
-            TAB 1: UPLOAD PICTURES MANUALLY & EDIT TAGS / SPECIFICATIONS
+            TAB 1: UPLOAD PICTURES MANUALLY & EDIT TAGS / WRITE-UPS
         ==================================================================== */}
         {activeTab === 'artworks' && (
           <div className="space-y-16">
@@ -971,7 +1012,7 @@ export default function AdminPortal({
                     Manual Studio Upload
                   </p>
                   <h2 className="font-editorial text-3xl text-[var(--text-primary)]">
-                    Upload New Artwork & Assign Tags
+                    Upload New Artwork, Tags & Process Write-Up
                   </h2>
                 </div>
               </div>
@@ -1021,7 +1062,7 @@ export default function AdminPortal({
                   </label>
                 </div>
 
-                {/* Right 8 Cols: Metadata & Tags Form */}
+                {/* Right 8 Cols: Metadata, Tags & Process Write-Up Form */}
                 <div className="lg:col-span-8 space-y-5">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <label className="sm:col-span-2 block">
@@ -1202,15 +1243,19 @@ export default function AdminPortal({
                     </div>
                   </div>
 
-                  {/* Description & Add Artwork Button */}
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-end justify-between gap-4">
-                    <label className="flex-1 block">
-                      <span className="block text-xs text-[var(--text-muted)] mb-1.5">
-                        Curatorial Note
+                  {/* Process & Experience Write-Up & Add Artwork Button */}
+                  <div className="space-y-4">
+                    <label className="block">
+                      <span className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] mb-1.5">
+                        <FileText className="w-3.5 h-3.5 text-[var(--text-accent)]" />
+                        <span>
+                          Process & Artist Experience Write-Up (Attached to
+                          Artwork Dropdown)
+                        </span>
                       </span>
-                      <input
-                        type="text"
-                        placeholder="Brief story or material notes behind this piece..."
+                      <textarea
+                        rows={3}
+                        placeholder="Write the creative process, personal journey, and experiences that inspired this piece of art..."
                         value={newWorkForm.description}
                         onChange={(e) =>
                           setNewWorkForm((prev) => ({
@@ -1218,17 +1263,19 @@ export default function AdminPortal({
                             description: e.target.value,
                           }))
                         }
-                        className="w-full px-4 py-3 text-xs text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[18px] border border-[var(--border-subtle)]"
+                        className="w-full px-4 py-3 text-xs text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[18px] border border-[var(--border-subtle)] resize-none"
                       />
                     </label>
 
-                    <button
-                      type="submit"
-                      className="inline-flex items-center justify-center gap-2 px-7 py-3.5 text-xs font-medium text-[var(--btn-primary-text)] bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover-bg)] hover:text-[var(--btn-primary-hover-text)] rounded-[20px] transition-colors cursor-pointer whitespace-nowrap shrink-0"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Add Artwork to Collection</span>
-                    </button>
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        className="inline-flex items-center justify-center gap-2 px-7 py-3.5 text-xs font-medium text-[var(--btn-primary-text)] bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover-bg)] hover:text-[var(--btn-primary-hover-text)] rounded-[20px] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Add Artwork to Collection</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </form>
@@ -1533,20 +1580,25 @@ export default function AdminPortal({
                         </div>
                       </div>
 
-                      {/* Curatorial Note */}
+                      {/* Process & Experience Write-Up (Attached to Artwork Dropdown) */}
                       <label className="block">
-                        <span className="block text-[11px] text-[var(--text-muted)] mb-1">
-                          Curatorial Description
+                        <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)] mb-1">
+                          <FileText className="w-3 h-3 text-[var(--text-accent)]" />
+                          <span>
+                            Process & Experience Write-Up (Shown in Artwork
+                            Dropdown on All Screens)
+                          </span>
                         </span>
                         <textarea
-                          rows={2}
+                          rows={3}
                           value={artwork.description}
                           onChange={(e) =>
                             onUpdateDraftArtwork(artwork.id, {
                               description: e.target.value,
                             })
                           }
-                          className="w-full px-3.5 py-2 text-xs text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[14px] border border-[var(--border-subtle)] resize-none"
+                          placeholder="Write about your creative process and the personal experiences that led you to create this piece..."
+                          className="w-full px-3.5 py-2.5 text-xs text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[14px] border border-[var(--border-subtle)] resize-y leading-relaxed"
                         />
                       </label>
                     </div>
@@ -1558,7 +1610,632 @@ export default function AdminPortal({
         )}
 
         {/* ===================================================================
-            TAB 2: ADMIN CREDENTIALS, SECURITY QUESTION & SOCIAL LINKS
+            TAB 2: FRONT-END & HERO EDITOR (Hero Images, My Story, Who I Am, Contact)
+        ==================================================================== */}
+        {activeTab === 'frontend' && (
+          <div className="space-y-12">
+            {/* Top Bar for Front-End Editor */}
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-[var(--border-subtle)]">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-[var(--text-muted)] mb-1">
+                  Full Front-End Customization
+                </p>
+                <h2 className="font-editorial text-3xl text-[var(--text-primary)]">
+                  Hero Images, My Story & About Me Editor
+                </h2>
+                <p className="text-xs text-[var(--text-muted)] mt-1">
+                  Customize your hero photographs and edit every front-end
+                  story, headline, and contact detail. Click Save Changes when
+                  ready.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleSaveChangesClick}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-medium text-[var(--btn-primary-text)] bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover-bg)] hover:text-[var(--btn-primary-hover-text)] rounded-[20px] transition-colors cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save Changes</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    onResetSiteContent();
+                    triggerToast(
+                      'Front-end content and hero images restored to defaults.'
+                    );
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[20px] transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset Front-End to Defaults</span>
+                </button>
+              </div>
+            </div>
+
+            {/* SECTION A: HERO IMAGES & HERO CAPTIONS */}
+            <section className="rounded-[28px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-8 md:p-10 space-y-8 shadow-lg">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-[var(--text-muted)] mb-1">
+                  01 · Landing Hero Section
+                </p>
+                <h3 className="font-editorial text-2xl text-[var(--text-primary)]">
+                  Hero Photographs & Overlay Text
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Smaller Left Hero Portrait */}
+                <div className="lg:col-span-4 space-y-3">
+                  <span className="block text-xs font-medium text-[var(--text-primary)]">
+                    Smaller Left Hero Portrait
+                  </span>
+                  <div className="rounded-[20px] overflow-hidden bg-[var(--bg-input)] aspect-[3/4] border border-[var(--border-subtle)] max-h-72">
+                    <img
+                      src={draftSiteContent.smallHeroImage}
+                      alt="Small Hero Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-medium bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-[16px] cursor-pointer">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Upload New Small Hero</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) =>
+                          handleSiteImageUpload('smallHeroImage', e)
+                        }
+                        className="sr-only"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onUpdateDraftSiteContent({
+                          smallHeroImage: DEFAULT_SITE_CONTENT.smallHeroImage,
+                        })
+                      }
+                      className="px-3 py-2.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-[16px] cursor-pointer"
+                      title="Reset to default portrait"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+
+                {/* Main Larger Hero Portrait + Captions */}
+                <div className="lg:col-span-8 space-y-5">
+                  <div className="space-y-3">
+                    <span className="block text-xs font-medium text-[var(--text-primary)]">
+                      Main Feature Hero Image
+                    </span>
+                    <div className="rounded-[20px] overflow-hidden bg-[var(--bg-input)] aspect-[16/10] border border-[var(--border-subtle)] max-h-72">
+                      <img
+                        src={draftSiteContent.mainHeroImage}
+                        alt="Main Hero Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-medium bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-[16px] cursor-pointer">
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Upload New Main Hero Picture</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) =>
+                            handleSiteImageUpload('mainHeroImage', e)
+                          }
+                          className="sr-only"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onUpdateDraftSiteContent({
+                            mainHeroImage: DEFAULT_SITE_CONTENT.mainHeroImage,
+                          })
+                        }
+                        className="px-4 py-2.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-[16px] cursor-pointer"
+                      >
+                        Reset Default
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <label className="block">
+                      <span className="block text-xs text-[var(--text-muted)] mb-1.5">
+                        Hero Archive Eyebrow Label
+                      </span>
+                      <input
+                        type="text"
+                        value={draftSiteContent.heroArchiveLabel}
+                        onChange={(e) =>
+                          onUpdateDraftSiteContent({
+                            heroArchiveLabel: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-2.5 text-xs text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)]"
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span className="block text-xs text-[var(--text-muted)] mb-1.5">
+                        Hero Poetic Subtitle
+                      </span>
+                      <input
+                        type="text"
+                        value={draftSiteContent.heroSubtitle}
+                        onChange={(e) =>
+                          onUpdateDraftSiteContent({
+                            heroSubtitle: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-2.5 text-xs text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)]"
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* SECTION B: "MY STORY" FRONT-END EDITOR */}
+            <section className="rounded-[28px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-8 md:p-10 space-y-6 shadow-lg">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-[var(--text-muted)] mb-1">
+                  02 · Homepage Introduction
+                </p>
+                <h3 className="font-editorial text-2xl text-[var(--text-primary)]">
+                  &ldquo;My Story&rdquo; Section Copy
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label className="block">
+                  <span className="block text-xs text-[var(--text-muted)] mb-1.5">
+                    Welcome Eyebrow Text
+                  </span>
+                  <input
+                    type="text"
+                    value={draftSiteContent.myStoryLabel}
+                    onChange={(e) =>
+                      onUpdateDraftSiteContent({ myStoryLabel: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 text-xs text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)]"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="block text-xs text-[var(--text-muted)] mb-1.5">
+                    Main Heading
+                  </span>
+                  <input
+                    type="text"
+                    value={draftSiteContent.myStoryHeading}
+                    onChange={(e) =>
+                      onUpdateDraftSiteContent({
+                        myStoryHeading: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 text-xs font-editorial text-base text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)]"
+                  />
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className="block">
+                  <span className="block text-xs text-[var(--text-muted)] mb-1.5">
+                    My Story · Primary Paragraph
+                  </span>
+                  <textarea
+                    rows={4}
+                    value={draftSiteContent.myStoryLead}
+                    onChange={(e) =>
+                      onUpdateDraftSiteContent({ myStoryLead: e.target.value })
+                    }
+                    className="w-full px-4 py-3 text-xs text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)] leading-relaxed"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="block text-xs text-[var(--text-muted)] mb-1.5">
+                    My Story · Supporting Paragraph
+                  </span>
+                  <textarea
+                    rows={4}
+                    value={draftSiteContent.myStorySubtext}
+                    onChange={(e) =>
+                      onUpdateDraftSiteContent({
+                        myStorySubtext: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-3 text-xs text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)] leading-relaxed"
+                  />
+                </label>
+              </div>
+            </section>
+
+            {/* SECTION C: "WHO I AM" / ABOUT ME SECTION EDITOR */}
+            <section className="rounded-[28px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-8 md:p-10 space-y-8 shadow-lg">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-[var(--text-muted)] mb-1">
+                  03 · About Me / Who I Am Section
+                </p>
+                <h3 className="font-editorial text-2xl text-[var(--text-primary)]">
+                  &ldquo;Who I Am&rdquo; Statement, Story Cards & Diptych Photos
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label className="block">
+                  <span className="block text-xs text-[var(--text-muted)] mb-1.5">
+                    Section Label
+                  </span>
+                  <input
+                    type="text"
+                    value={draftSiteContent.aboutSectionLabel}
+                    onChange={(e) =>
+                      onUpdateDraftSiteContent({
+                        aboutSectionLabel: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 text-xs text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)]"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="block text-xs text-[var(--text-muted)] mb-1.5">
+                    Established Subtitle
+                  </span>
+                  <input
+                    type="text"
+                    value={draftSiteContent.aboutEstablishedLabel}
+                    onChange={(e) =>
+                      onUpdateDraftSiteContent({
+                        aboutEstablishedLabel: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 text-xs text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)]"
+                  />
+                </label>
+              </div>
+
+              <label className="block">
+                <span className="block text-xs text-[var(--text-muted)] mb-1.5">
+                  Editorial Statement Headline
+                </span>
+                <textarea
+                  rows={2}
+                  value={draftSiteContent.aboutHeadline}
+                  onChange={(e) =>
+                    onUpdateDraftSiteContent({ aboutHeadline: e.target.value })
+                  }
+                  className="w-full px-4 py-3 text-sm font-editorial text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)]"
+                />
+              </label>
+
+              {/* Two Expandable About Cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Evolution Card Editor */}
+                <div className="p-6 rounded-[22px] bg-[var(--bg-input)] border border-[var(--border-subtle)] space-y-4">
+                  <label className="block">
+                    <span className="block text-[11px] text-[var(--text-muted)] mb-1">
+                      Card 1 Heading
+                    </span>
+                    <input
+                      type="text"
+                      value={draftSiteContent.evolutionTitle}
+                      onChange={(e) =>
+                        onUpdateDraftSiteContent({
+                          evolutionTitle: e.target.value,
+                        })
+                      }
+                      className="w-full px-3.5 py-2 text-xs text-[var(--text-primary)] bg-[var(--bg-surface)] rounded-[14px] border border-[var(--border-subtle)]"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="block text-[11px] text-[var(--text-muted)] mb-1">
+                      Card 1 Lead Summary (Always Visible)
+                    </span>
+                    <textarea
+                      rows={3}
+                      value={draftSiteContent.evolutionSummary}
+                      onChange={(e) =>
+                        onUpdateDraftSiteContent({
+                          evolutionSummary: e.target.value,
+                        })
+                      }
+                      className="w-full px-3.5 py-2 text-xs text-[var(--text-primary)] bg-[var(--bg-surface)] rounded-[14px] border border-[var(--border-subtle)]"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="block text-[11px] text-[var(--text-muted)] mb-1">
+                      Card 1 Expandable Story · Paragraph 1
+                    </span>
+                    <textarea
+                      rows={3}
+                      value={draftSiteContent.evolutionDetail1}
+                      onChange={(e) =>
+                        onUpdateDraftSiteContent({
+                          evolutionDetail1: e.target.value,
+                        })
+                      }
+                      className="w-full px-3.5 py-2 text-xs text-[var(--text-primary)] bg-[var(--bg-surface)] rounded-[14px] border border-[var(--border-subtle)]"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="block text-[11px] text-[var(--text-muted)] mb-1">
+                      Card 1 Expandable Story · Paragraph 2
+                    </span>
+                    <textarea
+                      rows={4}
+                      value={draftSiteContent.evolutionDetail2}
+                      onChange={(e) =>
+                        onUpdateDraftSiteContent({
+                          evolutionDetail2: e.target.value,
+                        })
+                      }
+                      className="w-full px-3.5 py-2 text-xs text-[var(--text-primary)] bg-[var(--bg-surface)] rounded-[14px] border border-[var(--border-subtle)]"
+                    />
+                  </label>
+                </div>
+
+                {/* Approach Card Editor */}
+                <div className="p-6 rounded-[22px] bg-[var(--bg-input)] border border-[var(--border-subtle)] space-y-4">
+                  <label className="block">
+                    <span className="block text-[11px] text-[var(--text-muted)] mb-1">
+                      Card 2 Heading
+                    </span>
+                    <input
+                      type="text"
+                      value={draftSiteContent.approachTitle}
+                      onChange={(e) =>
+                        onUpdateDraftSiteContent({
+                          approachTitle: e.target.value,
+                        })
+                      }
+                      className="w-full px-3.5 py-2 text-xs text-[var(--text-primary)] bg-[var(--bg-surface)] rounded-[14px] border border-[var(--border-subtle)]"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="block text-[11px] text-[var(--text-muted)] mb-1">
+                      Card 2 Lead Summary (Always Visible)
+                    </span>
+                    <textarea
+                      rows={3}
+                      value={draftSiteContent.approachSummary}
+                      onChange={(e) =>
+                        onUpdateDraftSiteContent({
+                          approachSummary: e.target.value,
+                        })
+                      }
+                      className="w-full px-3.5 py-2 text-xs text-[var(--text-primary)] bg-[var(--bg-surface)] rounded-[14px] border border-[var(--border-subtle)]"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="block text-[11px] text-[var(--text-muted)] mb-1">
+                      Card 2 Expandable Story · Paragraph 1
+                    </span>
+                    <textarea
+                      rows={3}
+                      value={draftSiteContent.approachDetail1}
+                      onChange={(e) =>
+                        onUpdateDraftSiteContent({
+                          approachDetail1: e.target.value,
+                        })
+                      }
+                      className="w-full px-3.5 py-2 text-xs text-[var(--text-primary)] bg-[var(--bg-surface)] rounded-[14px] border border-[var(--border-subtle)]"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="block text-[11px] text-[var(--text-muted)] mb-1">
+                      Card 2 Expandable Story · Paragraph 2
+                    </span>
+                    <textarea
+                      rows={4}
+                      value={draftSiteContent.approachDetail2}
+                      onChange={(e) =>
+                        onUpdateDraftSiteContent({
+                          approachDetail2: e.target.value,
+                        })
+                      }
+                      className="w-full px-3.5 py-2 text-xs text-[var(--text-primary)] bg-[var(--bg-surface)] rounded-[14px] border border-[var(--border-subtle)]"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* About Section Diptych Images */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+                <div className="p-5 rounded-[20px] bg-[var(--bg-input)] border border-[var(--border-subtle)] space-y-3">
+                  <span className="block text-xs font-medium text-[var(--text-primary)]">
+                    About Section · Left Diptych Image
+                  </span>
+                  <div className="rounded-[16px] overflow-hidden bg-[var(--bg-surface)] aspect-[3/4] max-h-56 border border-[var(--border-subtle)]">
+                    <img
+                      src={draftSiteContent.aboutLeftImage}
+                      alt="About Left Diptych"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <label className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-[14px] cursor-pointer">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Replace Left Image</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        handleSiteImageUpload('aboutLeftImage', e)
+                      }
+                      className="sr-only"
+                    />
+                  </label>
+                </div>
+
+                <div className="p-5 rounded-[20px] bg-[var(--bg-input)] border border-[var(--border-subtle)] space-y-3">
+                  <span className="block text-xs font-medium text-[var(--text-primary)]">
+                    About Section · Right Diptych Image
+                  </span>
+                  <div className="rounded-[16px] overflow-hidden bg-[var(--bg-surface)] aspect-[4/3] max-h-56 border border-[var(--border-subtle)]">
+                    <img
+                      src={draftSiteContent.aboutRightImage}
+                      alt="About Right Diptych"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <label className="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium bg-[var(--bg-elevated)] hover:bg-[var(--bg-elevated-hover)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-[14px] cursor-pointer">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Replace Right Image</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        handleSiteImageUpload('aboutRightImage', e)
+                      }
+                      className="sr-only"
+                    />
+                  </label>
+                </div>
+              </div>
+            </section>
+
+            {/* SECTION D: CONTACT & FOOTER COPY */}
+            <section className="rounded-[28px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-8 md:p-10 space-y-6 shadow-lg">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-[var(--text-muted)] mb-1">
+                  04 · Contact & Footer Details
+                </p>
+                <h3 className="font-editorial text-2xl text-[var(--text-primary)]">
+                  Studio Email, WhatsApp & Contact Copy
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <label className="block">
+                  <span className="block text-xs text-[var(--text-muted)] mb-1.5">
+                    Public Work Email
+                  </span>
+                  <input
+                    type="email"
+                    value={draftSiteContent.studioEmail}
+                    onChange={(e) =>
+                      onUpdateDraftSiteContent({ studioEmail: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 text-xs font-mono-spec text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)]"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="block text-xs text-[var(--text-muted)] mb-1.5">
+                    WhatsApp Display Number
+                  </span>
+                  <input
+                    type="text"
+                    value={draftSiteContent.studioWhatsappDisplay}
+                    onChange={(e) =>
+                      onUpdateDraftSiteContent({
+                        studioWhatsappDisplay: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 text-xs font-mono-spec text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)]"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="block text-xs text-[var(--text-muted)] mb-1.5">
+                    WhatsApp Direct Link (wa.me)
+                  </span>
+                  <input
+                    type="url"
+                    value={draftSiteContent.studioWhatsappUrl}
+                    onChange={(e) =>
+                      onUpdateDraftSiteContent({
+                        studioWhatsappUrl: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 text-xs font-mono-spec text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)]"
+                  />
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <label className="block">
+                  <span className="block text-xs text-[var(--text-muted)] mb-1.5">
+                    Contact Section Heading
+                  </span>
+                  <input
+                    type="text"
+                    value={draftSiteContent.contactHeading}
+                    onChange={(e) =>
+                      onUpdateDraftSiteContent({
+                        contactHeading: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 text-xs text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)]"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="block text-xs text-[var(--text-muted)] mb-1.5">
+                    Contact Subtext
+                  </span>
+                  <input
+                    type="text"
+                    value={draftSiteContent.contactSubtext}
+                    onChange={(e) =>
+                      onUpdateDraftSiteContent({
+                        contactSubtext: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 text-xs text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)]"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="block text-xs text-[var(--text-muted)] mb-1.5">
+                    Footer Tagline
+                  </span>
+                  <input
+                    type="text"
+                    value={draftSiteContent.footerTagline}
+                    onChange={(e) =>
+                      onUpdateDraftSiteContent({
+                        footerTagline: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2.5 text-xs text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)]"
+                  />
+                </label>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={handleSaveChangesClick}
+                  className="inline-flex items-center gap-2 px-6 py-3 text-xs font-medium text-[var(--btn-primary-text)] bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover-bg)] hover:text-[var(--btn-primary-hover-text)] rounded-[20px] transition-colors cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save Front-End Changes</span>
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
+
+        {/* ===================================================================
+            TAB 3: ADMIN CREDENTIALS, SECURITY QUESTION & SOCIAL LINKS
         ==================================================================== */}
         {activeTab === 'security' && (
           <div className="max-w-xl mx-auto rounded-[28px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-8 md:p-10 space-y-8 shadow-xl">
@@ -1567,7 +2244,7 @@ export default function AdminPortal({
                 Access Control, Cryptographic Hashing & Socials
               </p>
               <h2 className="font-editorial text-3xl text-[var(--text-primary)]">
-                Studio Credentials & Security Question
+                Studio Credentials & Social Links
               </h2>
               <p className="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
                 All passwords and security recovery answers are hashed with
@@ -1694,9 +2371,10 @@ export default function AdminPortal({
                 </label>
               </div>
 
+              {/* Footer Social Media Links (Instagram, WhatsApp, TikTok, Facebook, X/Twitter, Behance) */}
               <div className="pt-4 border-t border-[var(--border-subtle)] space-y-4">
                 <p className="text-xs font-medium text-[var(--text-primary)]">
-                  Footer Social Media Links
+                  Footer & Contact Social Media Links
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1728,6 +2406,40 @@ export default function AdminPortal({
                         setLocalSocials((prev) => ({
                           ...prev,
                           whatsapp: e.target.value,
+                        }))
+                      }
+                      className="w-full px-4 py-2.5 text-xs text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)]"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="block text-xs text-[var(--text-muted)] mb-1.5">
+                      TikTok URL
+                    </span>
+                    <input
+                      type="url"
+                      value={localSocials.tiktok}
+                      onChange={(e) =>
+                        setLocalSocials((prev) => ({
+                          ...prev,
+                          tiktok: e.target.value,
+                        }))
+                      }
+                      className="w-full px-4 py-2.5 text-xs text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)]"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="block text-xs text-[var(--text-muted)] mb-1.5">
+                      Facebook URL
+                    </span>
+                    <input
+                      type="url"
+                      value={localSocials.facebook}
+                      onChange={(e) =>
+                        setLocalSocials((prev) => ({
+                          ...prev,
+                          facebook: e.target.value,
                         }))
                       }
                       className="w-full px-4 py-2.5 text-xs text-[var(--text-primary)] bg-[var(--bg-input)] rounded-[16px] border border-[var(--border-subtle)]"
@@ -1877,9 +2589,9 @@ export default function AdminPortal({
                   Admin Changes Saved
                 </h3>
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                  Your changes have been saved to the Admin Dashboard. Would you
-                  also like to publish these exact current changes to the live
-                  public site right now?
+                  Your artwork and front-end changes have been saved to the
+                  Admin Dashboard. Would you also like to publish these exact
+                  current changes to the live public site right now?
                 </p>
               </div>
 

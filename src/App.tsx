@@ -31,6 +31,9 @@ import {
   Sun,
   Moon,
   Menu,
+  Facebook,
+  Music2,
+  FileText,
 } from 'lucide-react';
 import {
   ArtworkItem,
@@ -40,6 +43,10 @@ import {
 import {
   savePortfolioToDB,
   loadPortfolioFromDB,
+  SiteContent,
+  DEFAULT_SITE_CONTENT,
+  saveSiteContentToDB,
+  loadSiteContentFromDB,
 } from './utils/imageProcessor';
 import AdminPortal, {
   AdminCredentials,
@@ -52,21 +59,17 @@ import {
   hashPassword,
 } from './utils/security';
 
-const STORAGE_KEY_ADMIN_CREDS = 'artbymo_admin_creds_v5';
+const STORAGE_KEY_ADMIN_CREDS = 'artbymo_admin_creds_v6';
+const LEGACY_STORAGE_KEY_V5 = 'artbymo_admin_creds_v5';
 const LEGACY_STORAGE_KEY_V4 = 'artbymo_admin_creds_v4';
 const LEGACY_STORAGE_KEY_V3 = 'artbymo_admin_creds_v3';
 const STORAGE_KEY_ADMIN_SESSION = 'artbymo_admin_session_v3';
-const STORAGE_KEY_SOCIAL_LINKS = 'artbymo_social_links_v3';
+const STORAGE_KEY_SOCIAL_LINKS = 'artbymo_social_links_v4';
 const STORAGE_KEY_THEME_MODE = 'artbymo_theme_mode_v1';
 
-const MAIN_HERO_IMAGE =
-  '/assets/aistudio/Dual_Portraits__Purple_Glow_and_Pink_Sunlight_11cf5606.png';
-const SMALL_HERO_IMAGE =
-  '/assets/aistudio/Casual_Portrait_with_Pink_Hair_and_Gold_Glasses_c215e3fd.png';
-
-const STUDIO_EMAIL = 'travismo1998@gmail.com';
-const STUDIO_WHATSAPP_DISPLAY = '+234 904 627 4402';
-const STUDIO_WHATSAPP_URL = 'https://wa.me/2349046274402';
+const STUDIO_EMAIL = 'artbymoinspired@gmail.com';
+const STUDIO_WHATSAPP_DISPLAY = '+234 906 715 6870';
+const STUDIO_WHATSAPP_URL = 'https://wa.me/2349067156870';
 
 /**
  * Resilient Image component implementing the Zero-Broken-Image Policy.
@@ -201,29 +204,54 @@ export default function App() {
     }
   }, []);
 
-  // Published Artworks (Visible to Public Visitors)
+  // Published & Draft Artworks
   const [publishedArtworks, setPublishedArtworks] =
     useState<ArtworkItem[]>(INITIAL_ARTWORKS);
-
-  // Admin Draft Artworks (Edited in Admin Dashboard prior to publishing)
   const [draftArtworks, setDraftArtworks] =
     useState<ArtworkItem[]>(INITIAL_ARTWORKS);
+
+  // Published & Draft Front-End Site Content (Hero Images, My Story, Who I Am, Contact)
+  const [publishedSiteContent, setPublishedSiteContent] =
+    useState<SiteContent>(DEFAULT_SITE_CONTENT);
+  const [draftSiteContent, setDraftSiteContent] =
+    useState<SiteContent>(DEFAULT_SITE_CONTENT);
+
   const [hasUnpublishedChanges, setHasUnpublishedChanges] = useState(false);
 
-  // Load saved Published & Draft artworks from IndexedDB / localStorage on mount
+  // Load saved Published & Draft artworks + Site Content from IndexedDB / localStorage on mount
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const savedPublished = await loadPortfolioFromDB('published_artworks');
-      const savedDraft = await loadPortfolioFromDB('draft_artworks');
+      const [
+        savedPublishedWorks,
+        savedDraftWorks,
+        savedPublishedContent,
+        savedDraftContent,
+      ] = await Promise.all([
+        loadPortfolioFromDB('published_artworks'),
+        loadPortfolioFromDB('draft_artworks'),
+        loadSiteContentFromDB('published_site_content'),
+        loadSiteContentFromDB('draft_site_content'),
+      ]);
+
       if (!mounted) return;
-      if (savedPublished && savedPublished.length > 0) {
-        setPublishedArtworks(savedPublished);
+
+      if (savedPublishedWorks && savedPublishedWorks.length > 0) {
+        setPublishedArtworks(savedPublishedWorks);
       }
-      if (savedDraft && savedDraft.length > 0) {
-        setDraftArtworks(savedDraft);
-      } else if (savedPublished && savedPublished.length > 0) {
-        setDraftArtworks(savedPublished);
+      if (savedDraftWorks && savedDraftWorks.length > 0) {
+        setDraftArtworks(savedDraftWorks);
+      } else if (savedPublishedWorks && savedPublishedWorks.length > 0) {
+        setDraftArtworks(savedPublishedWorks);
+      }
+
+      if (savedPublishedContent) {
+        setPublishedSiteContent(savedPublishedContent);
+      }
+      if (savedDraftContent) {
+        setDraftSiteContent(savedDraftContent);
+      } else if (savedPublishedContent) {
+        setDraftSiteContent(savedPublishedContent);
       }
     })();
     return () => {
@@ -231,13 +259,13 @@ export default function App() {
     };
   }, []);
 
-  // Admin Credentials & Session State (Salted SHA-256 hashes only; migrates & wipes any legacy plaintext)
+  // Admin Credentials & Session State (Salted SHA-256 hashes only)
   const [adminCredentials, setAdminCredentials] = useState<AdminCredentials>(
     () => {
       try {
-        const savedV5 = localStorage.getItem(STORAGE_KEY_ADMIN_CREDS);
-        if (savedV5) {
-          const parsed = JSON.parse(savedV5);
+        const savedV6 = localStorage.getItem(STORAGE_KEY_ADMIN_CREDS);
+        if (savedV6) {
+          const parsed = JSON.parse(savedV6);
           return {
             username: parsed.username || STUDIO_EMAIL,
             passwordHash: parsed.passwordHash || DEFAULT_PASSWORD_HASH,
@@ -249,21 +277,28 @@ export default function App() {
           };
         }
 
-        // Migrate any legacy v4 or v3 storage to v5 with the NYSC cat question & SHA-256 hash
+        // Migrate any legacy storage to v6 with artbymoinspired@gmail.com default
         const legacyRaw =
+          localStorage.getItem(LEGACY_STORAGE_KEY_V5) ||
           localStorage.getItem(LEGACY_STORAGE_KEY_V4) ||
           localStorage.getItem(LEGACY_STORAGE_KEY_V3);
         if (legacyRaw) {
           const parsedLegacy = JSON.parse(legacyRaw);
+          const migratedUser =
+            parsedLegacy.username === 'travismo1998@gmail.com'
+              ? STUDIO_EMAIL
+              : parsedLegacy.username || STUDIO_EMAIL;
           const migrated: AdminCredentials = {
-            username: parsedLegacy.username || STUDIO_EMAIL,
+            username: migratedUser,
             passwordHash: parsedLegacy.passwordHash
               ? parsedLegacy.passwordHash
               : parsedLegacy.password
                 ? hashPassword(parsedLegacy.password)
                 : DEFAULT_PASSWORD_HASH,
-            recoveryQuestion: DEFAULT_RECOVERY_QUESTION,
-            recoveryPhraseHash: DEFAULT_RECOVERY_HASH,
+            recoveryQuestion:
+              parsedLegacy.recoveryQuestion || DEFAULT_RECOVERY_QUESTION,
+            recoveryPhraseHash:
+              parsedLegacy.recoveryPhraseHash || DEFAULT_RECOVERY_HASH,
             hasCustomizedCredentials: Boolean(
               parsedLegacy.hasCustomizedCredentials
             ),
@@ -272,6 +307,7 @@ export default function App() {
             STORAGE_KEY_ADMIN_CREDS,
             JSON.stringify(migrated)
           );
+          localStorage.removeItem(LEGACY_STORAGE_KEY_V5);
           localStorage.removeItem(LEGACY_STORAGE_KEY_V4);
           localStorage.removeItem(LEGACY_STORAGE_KEY_V3);
           return migrated;
@@ -280,10 +316,7 @@ export default function App() {
         // Fallback
       }
       return {
-        username:
-          (typeof import.meta !== 'undefined' &&
-            import.meta.env?.VITE_ADMIN_INITIAL_USER) ||
-          STUDIO_EMAIL,
+        username: STUDIO_EMAIL,
         passwordHash: DEFAULT_PASSWORD_HASH,
         recoveryQuestion: DEFAULT_RECOVERY_QUESTION,
         recoveryPhraseHash: DEFAULT_RECOVERY_HASH,
@@ -294,9 +327,22 @@ export default function App() {
 
   const [socialLinks, setSocialLinks] = useState<SocialLinks>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY_SOCIAL_LINKS);
+      const saved =
+        localStorage.getItem(STORAGE_KEY_SOCIAL_LINKS) ||
+        localStorage.getItem('artbymo_social_links_v3');
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        return {
+          instagram: parsed.instagram || 'https://instagram.com',
+          whatsapp:
+            parsed.whatsapp && !parsed.whatsapp.includes('2349046274402')
+              ? parsed.whatsapp
+              : STUDIO_WHATSAPP_URL,
+          tiktok: parsed.tiktok || 'https://tiktok.com',
+          facebook: parsed.facebook || 'https://facebook.com',
+          twitter: parsed.twitter || 'https://x.com',
+          behance: parsed.behance || 'https://behance.net',
+        };
       }
     } catch {
       // Fallback
@@ -304,6 +350,8 @@ export default function App() {
     return {
       instagram: 'https://instagram.com',
       whatsapp: STUDIO_WHATSAPP_URL,
+      tiktok: 'https://tiktok.com',
+      facebook: 'https://facebook.com',
       twitter: 'https://x.com',
       behance: 'https://behance.net',
     };
@@ -327,6 +375,19 @@ export default function App() {
     'all' | ArtworkCategory
   >('all');
   const [activeTag, setActiveTag] = useState<string>('All Tags');
+
+  // Per-Artwork Write-Up Dropdown State (Closed by default on all screens)
+  const [expandedWriteUpIds, setExpandedWriteUpIds] = useState<
+    Record<string, boolean>
+  >({});
+
+  const toggleArtworkWriteUp = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedWriteUpIds((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
 
   // Selected Artwork Lightbox Modal State
   const [selectedArtworkId, setSelectedArtworkId] = useState<string | null>(
@@ -446,15 +507,27 @@ export default function App() {
     setHasUnpublishedChanges(true);
   };
 
+  const handleUpdateDraftSiteContent = (updates: Partial<SiteContent>) => {
+    setDraftSiteContent((prev) => ({
+      ...prev,
+      ...updates,
+    }));
+    setHasUnpublishedChanges(true);
+  };
+
   const handleSaveDraftChanges = () => {
     savePortfolioToDB('draft_artworks', draftArtworks);
+    saveSiteContentToDB('draft_site_content', draftSiteContent);
   };
 
   const handlePublishToLiveSite = () => {
     setPublishedArtworks(draftArtworks);
+    setPublishedSiteContent(draftSiteContent);
     setHasUnpublishedChanges(false);
     savePortfolioToDB('draft_artworks', draftArtworks);
     savePortfolioToDB('published_artworks', draftArtworks);
+    saveSiteContentToDB('draft_site_content', draftSiteContent);
+    saveSiteContentToDB('published_site_content', draftSiteContent);
   };
 
   const handleResetGallery = () => {
@@ -465,6 +538,14 @@ export default function App() {
     setActiveTag('All Tags');
     savePortfolioToDB('draft_artworks', INITIAL_ARTWORKS);
     savePortfolioToDB('published_artworks', INITIAL_ARTWORKS);
+  };
+
+  const handleResetSiteContent = () => {
+    setDraftSiteContent(DEFAULT_SITE_CONTENT);
+    setPublishedSiteContent(DEFAULT_SITE_CONTENT);
+    setHasUnpublishedChanges(false);
+    saveSiteContentToDB('draft_site_content', DEFAULT_SITE_CONTENT);
+    saveSiteContentToDB('published_site_content', DEFAULT_SITE_CONTENT);
   };
 
   const handleUpdateAdminCredentials = (newCreds: AdminCredentials) => {
@@ -505,8 +586,9 @@ export default function App() {
   };
 
   const handleCopyEmail = async () => {
+    const emailToCopy = publishedSiteContent.studioEmail || STUDIO_EMAIL;
     try {
-      await navigator.clipboard.writeText(STUDIO_EMAIL);
+      await navigator.clipboard.writeText(emailToCopy);
       setEmailCopied(true);
       setTimeout(() => setEmailCopied(false), 2600);
     } catch {
@@ -529,6 +611,43 @@ export default function App() {
     }, 400);
   };
 
+  const handleNavigateToSection = (
+    sectionId: 'top' | 'works' | 'about' | 'contact',
+    e?: React.MouseEvent
+  ) => {
+    if (e) {
+      e.preventDefault();
+    }
+    const wasMobileMenuOpen = isMobileMenuOpen;
+    setIsMobileMenuOpen(false);
+
+    const performScroll = () => {
+      if (sectionId === 'top') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      const target = document.getElementById(sectionId);
+      if (target) {
+        const headerEl = document.querySelector('header');
+        const headerHeight = headerEl
+          ? Math.min(headerEl.getBoundingClientRect().height, 88)
+          : 80;
+        const targetTop =
+          target.getBoundingClientRect().top + window.scrollY - headerHeight - 12;
+        window.scrollTo({
+          top: Math.max(0, targetTop),
+          behavior: 'smooth',
+        });
+      }
+    };
+
+    // Perform immediate scroll and, if the mobile drawer was open, re-align once the drawer collapse finishes
+    requestAnimationFrame(performScroll);
+    if (wasMobileMenuOpen) {
+      setTimeout(performScroll, 270);
+    }
+  };
+
   return (
     <div
       data-theme={themeMode}
@@ -548,12 +667,15 @@ export default function App() {
           onLogout={handleAdminLogout}
           onCloseAdminView={() => setIsAdminViewOpen(false)}
           draftArtworks={draftArtworks}
+          draftSiteContent={draftSiteContent}
           hasUnpublishedChanges={hasUnpublishedChanges}
           onUpdateDraftArtwork={handleUpdateDraftArtwork}
           onAddDraftArtwork={handleAddDraftArtwork}
           onDeleteDraftArtwork={handleDeleteDraftArtwork}
           onMoveDraftArtwork={handleMoveDraftArtwork}
+          onUpdateDraftSiteContent={handleUpdateDraftSiteContent}
           onResetArtworks={handleResetGallery}
+          onResetSiteContent={handleResetSiteContent}
           onSaveDraftChanges={handleSaveDraftChanges}
           onPublishToLiveSite={handlePublishToLiveSite}
         />
@@ -568,7 +690,8 @@ export default function App() {
               {/* Zone 1: Case-sensitive brand wordmark ArtbyMo */}
               <a
                 href="#top"
-                className="text-base md:text-lg font-semibold tracking-tight text-[var(--text-primary)] whitespace-nowrap shrink-0"
+                onClick={(e) => handleNavigateToSection('top', e)}
+                className="text-base md:text-lg font-semibold tracking-tight text-[var(--text-primary)] whitespace-nowrap shrink-0 cursor-pointer"
               >
                 * ArtbyMo
               </a>
@@ -577,19 +700,22 @@ export default function App() {
               <nav className="hidden md:flex items-center gap-10 text-sm font-medium text-[var(--text-muted)]">
                 <a
                   href="#works"
-                  className="hover:text-[var(--text-primary)] transition-colors whitespace-nowrap shrink-0"
+                  onClick={(e) => handleNavigateToSection('works', e)}
+                  className="hover:text-[var(--text-primary)] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   Works
                 </a>
                 <a
                   href="#about"
-                  className="hover:text-[var(--text-primary)] transition-colors whitespace-nowrap shrink-0"
+                  onClick={(e) => handleNavigateToSection('about', e)}
+                  className="hover:text-[var(--text-primary)] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   About
                 </a>
                 <a
                   href="#contact"
-                  className="hover:text-[var(--text-primary)] transition-colors whitespace-nowrap shrink-0"
+                  onClick={(e) => handleNavigateToSection('contact', e)}
+                  className="hover:text-[var(--text-primary)] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                 >
                   Contacts
                 </a>
@@ -627,7 +753,8 @@ export default function App() {
 
                 <a
                   href="#contact"
-                  className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 text-xs font-medium text-[var(--btn-primary-text)] bg-[var(--btn-primary-bg)] rounded-[22px] hover:bg-[var(--btn-primary-hover-bg)] hover:text-[var(--btn-primary-hover-text)] transition-all duration-200 whitespace-nowrap shrink-0 shadow-xs"
+                  onClick={(e) => handleNavigateToSection('contact', e)}
+                  className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 text-xs font-medium text-[var(--btn-primary-text)] bg-[var(--btn-primary-bg)] rounded-[22px] hover:bg-[var(--btn-primary-hover-bg)] hover:text-[var(--btn-primary-hover-text)] transition-all duration-200 whitespace-nowrap shrink-0 shadow-xs cursor-pointer"
                 >
                   <span>Inquire</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
@@ -668,8 +795,8 @@ export default function App() {
                   <div className="px-6 py-6 flex flex-col gap-3">
                     <a
                       href="#works"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center justify-between px-4 py-3.5 rounded-[20px] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors"
+                      onClick={(e) => handleNavigateToSection('works', e)}
+                      className="flex items-center justify-between px-4 py-3.5 rounded-[20px] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] active:bg-[var(--bg-elevated)] transition-colors cursor-pointer"
                     >
                       <span>Works</span>
                       <span className="text-xs font-mono-spec text-[var(--text-muted)]">
@@ -678,8 +805,8 @@ export default function App() {
                     </a>
                     <a
                       href="#about"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center justify-between px-4 py-3.5 rounded-[20px] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors"
+                      onClick={(e) => handleNavigateToSection('about', e)}
+                      className="flex items-center justify-between px-4 py-3.5 rounded-[20px] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] active:bg-[var(--bg-elevated)] transition-colors cursor-pointer"
                     >
                       <span>About</span>
                       <span className="text-xs font-mono-spec text-[var(--text-muted)]">
@@ -688,8 +815,8 @@ export default function App() {
                     </a>
                     <a
                       href="#contact"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center justify-between px-4 py-3.5 rounded-[20px] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors"
+                      onClick={(e) => handleNavigateToSection('contact', e)}
+                      className="flex items-center justify-between px-4 py-3.5 rounded-[20px] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] active:bg-[var(--bg-elevated)] transition-colors cursor-pointer"
                     >
                       <span>Contacts</span>
                       <span className="text-xs font-mono-spec text-[var(--text-muted)]">
@@ -698,8 +825,8 @@ export default function App() {
                     </a>
                     <a
                       href="#contact"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="mt-2 inline-flex items-center justify-center gap-2 px-5 py-3.5 text-xs font-medium text-[var(--btn-primary-text)] bg-[var(--btn-primary-bg)] rounded-[22px] hover:bg-[var(--btn-primary-hover-bg)] hover:text-[var(--btn-primary-hover-text)] transition-all"
+                      onClick={(e) => handleNavigateToSection('contact', e)}
+                      className="mt-2 inline-flex items-center justify-center gap-2 px-5 py-3.5 text-xs font-medium text-[var(--btn-primary-text)] bg-[var(--btn-primary-bg)] rounded-[22px] hover:bg-[var(--btn-primary-hover-bg)] hover:text-[var(--btn-primary-hover-text)] transition-all cursor-pointer"
                     >
                       <span>Inquire</span>
                       <ArrowUpRight className="w-3.5 h-3.5" />
@@ -711,9 +838,7 @@ export default function App() {
           </header>
 
           {/* =====================================================================
-              HERO LANDING SECTION (Architectural Grid)
-              Smaller Hero: Casual_Portrait_with_Pink_Hair_and_Gold_Glasses_c215e3fd.png
-              Bigger Hero: Dual_Portraits__Purple_Glow_and_Pink_Sunlight_11cf5606.png
+              HERO LANDING SECTION (Architectural Grid — Editable via Admin)
           ====================================================================== */}
           <main
             id="top"
@@ -731,8 +856,8 @@ export default function App() {
                     className="overflow-hidden rounded-[22px] aspect-[3/4] bg-[var(--bg-elevated)] border border-[var(--border-subtle)]"
                   >
                     <ResilientArtworkImage
-                      src={SMALL_HERO_IMAGE}
-                      alt="ArtbyMo Casual Portrait with Pink Hair and Gold Glasses"
+                      src={publishedSiteContent.smallHeroImage}
+                      alt="ArtbyMo Studio Portrait"
                       title="ArtbyMo Studio Portrait"
                       className="w-full h-full object-cover object-center hover:scale-105 transition-all duration-700"
                     />
@@ -756,7 +881,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Right 3 Columns (9 of 12 cols on desktop): Bigger Dual Portraits Hero + MY STORY Row */}
+                {/* Right 3 Columns (9 of 12 cols on desktop): Bigger Main Hero + MY STORY Row */}
                 <div className="lg:col-span-9 flex flex-col justify-between">
                   {/* Top Main Hero Portrait Container */}
                   <div className="p-6 md:p-8 border-b border-[var(--border-subtle)]">
@@ -767,8 +892,8 @@ export default function App() {
                       className="relative overflow-hidden rounded-[24px] bg-[#0B0F0E] aspect-[4/3] sm:aspect-[16/11] border border-[var(--border-subtle)] shadow-xl"
                     >
                       <ResilientArtworkImage
-                        src={MAIN_HERO_IMAGE}
-                        alt="ArtbyMo Dual Portraits in Purple Glow and Pink Sunlight"
+                        src={publishedSiteContent.mainHeroImage}
+                        alt="ArtbyMo Main Hero Portrait"
                         title="ArtbyMo"
                         className="w-full h-full object-cover object-center transition-transform duration-700 hover:scale-[1.015]"
                       />
@@ -779,10 +904,10 @@ export default function App() {
                       <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between text-[#EEF2F0]">
                         <div>
                           <p className="text-xs tracking-widest uppercase text-[#A3B8AC] mb-1">
-                            ArtbyMo · Digital & Physical Archive
+                            {publishedSiteContent.heroArchiveLabel}
                           </p>
                           <p className="font-editorial italic text-2xl md:text-3xl">
-                            From Inner Turbulence to Visual Sanctuary
+                            {publishedSiteContent.heroSubtitle}
                           </p>
                         </div>
                       </div>
@@ -793,34 +918,26 @@ export default function App() {
                   <div className="grid grid-cols-1 md:grid-cols-9 divide-y md:divide-y-0 md:divide-x divide-[var(--border-subtle)]">
                     <div className="md:col-span-5 p-8 md:p-10 flex flex-col justify-between gap-6">
                       <span className="text-xs tracking-widest uppercase text-[var(--text-muted)]">
-                        Welcome to ArtbyMo
+                        {publishedSiteContent.myStoryLabel}
                       </span>
-                      <h1 className="font-editorial text-5xl sm:text-6xl lg:text-7xl font-normal tracking-tight leading-[0.94] text-[var(--text-primary)] text-balance">
-                        MY
-                        <br />
-                        STORY
+                      <h1 className="font-editorial text-5xl sm:text-6xl lg:text-7xl font-normal tracking-tight leading-[0.94] text-[var(--text-primary)] text-balance whitespace-pre-line">
+                        {publishedSiteContent.myStoryHeading}
                       </h1>
                     </div>
 
                     <div className="md:col-span-4 p-8 md:p-10 flex flex-col justify-between gap-6 bg-[var(--bg-surface-subtle)]">
                       <div className="space-y-3 text-sm text-[var(--text-secondary)] leading-relaxed">
-                        <p>
-                          ArtbyMo began in 2020 during a season of heavy mental
-                          health struggles. Drawing started as a quiet lifeline,
-                          a raw and honest outlet to release the emotional
-                          turbulence inside when spoken words felt out of reach.
-                        </p>
+                        <p>{publishedSiteContent.myStoryLead}</p>
                         <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                          What began as survival sketching in 2020 gradually
-                          progressed over the years into a deliberate, aesthetic,
-                          and deeply personal form of inner expression.
+                          {publishedSiteContent.myStorySubtext}
                         </p>
                       </div>
 
                       <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
                         <a
                           href="#contact"
-                          className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-[var(--text-primary)] pb-1.5 border-b-2 border-[var(--text-accent)] hover:text-[var(--text-accent)] transition-colors"
+                          onClick={(e) => handleNavigateToSection('contact', e)}
+                          className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-[var(--text-primary)] pb-1.5 border-b-2 border-[var(--text-accent)] hover:text-[var(--text-accent)] transition-colors cursor-pointer"
                         >
                           <span>Contact Me</span>
                           <ArrowUpRight className="w-3.5 h-3.5" />
@@ -828,7 +945,8 @@ export default function App() {
 
                         <a
                           href="#works"
-                          className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                          onClick={(e) => handleNavigateToSection('works', e)}
+                          className="inline-flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
                         >
                           <span>Explore {publishedArtworks.length} Works</span>
                           <ChevronDown className="w-3.5 h-3.5" />
@@ -844,7 +962,7 @@ export default function App() {
             </section>
 
             {/* =====================================================================
-                PORTFOLIO GALLERY (Overlapping CSS Grid Masonry)
+                PORTFOLIO GALLERY (Overlapping CSS Grid Masonry + Per-Artwork Write-Up Dropdown)
             ====================================================================== */}
             <section id="works" className="py-12 md:py-20 scroll-mt-24">
               {/* Gallery Header & Collection Filter Controls */}
@@ -924,6 +1042,9 @@ export default function App() {
                     const gridStyle = getMasonryGridClasses(
                       artwork.gridPlacement
                     );
+                    const isWriteUpOpen = Boolean(
+                      expandedWriteUpIds[artwork.id]
+                    );
 
                     return (
                       <motion.article
@@ -962,13 +1083,15 @@ export default function App() {
                           </div>
                         </div>
 
-                        {/* Overlapping Specification Plaque */}
+                        {/* Overlapping Specification Plaque + Process & Experience Dropdown */}
                         <div
-                          onClick={() => setSelectedArtworkId(artwork.id)}
-                          className={`relative z-20 mt-4 ${gridStyle.plaqueOffset} max-w-xl rounded-[22px] bg-[var(--bg-surface)] backdrop-blur-xl border border-[var(--border-subtle)] p-6 md:p-7 shadow-xl transition-all duration-300 cursor-pointer hover:border-[var(--border-strong)]`}
+                          className={`relative z-20 mt-4 ${gridStyle.plaqueOffset} max-w-xl rounded-[22px] bg-[var(--bg-surface)] backdrop-blur-xl border border-[var(--border-subtle)] p-6 md:p-7 shadow-xl transition-all duration-300 hover:border-[var(--border-strong)]`}
                         >
                           {/* Plaque Header: Catalog Number, Collection, Year & Unboxed Tags */}
-                          <div className="flex items-start justify-between gap-4 mb-4">
+                          <div
+                            onClick={() => setSelectedArtworkId(artwork.id)}
+                            className="flex items-start justify-between gap-4 mb-4 cursor-pointer"
+                          >
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--text-muted)] mb-1.5">
                                 <span className="font-mono-spec">
@@ -1007,14 +1130,17 @@ export default function App() {
 
                             <span
                               className="p-2.5 rounded-[16px] text-[var(--text-muted)] group-hover:text-[var(--text-primary)] group-hover:bg-[var(--bg-elevated)] transition-colors shrink-0"
-                              aria-hidden="true"
+                              title="Open full-screen artwork inspection"
                             >
                               <Maximize2 className="w-4 h-4" />
                             </span>
                           </div>
 
                           {/* 4 Specification Fields: Medium, Art Style, Paint Used, Dimensions */}
-                          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 pt-3 border-t border-[var(--border-subtle)] text-xs">
+                          <dl
+                            onClick={() => setSelectedArtworkId(artwork.id)}
+                            className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 pt-3 border-t border-[var(--border-subtle)] text-xs cursor-pointer"
+                          >
                             <div
                               className="flex items-center gap-2 text-[var(--text-secondary)] truncate"
                               title={`Medium: ${artwork.medium}`}
@@ -1051,6 +1177,51 @@ export default function App() {
                               <dd className="truncate">{artwork.dimensions}</dd>
                             </div>
                           </dl>
+
+                          {/* Per-Artwork Process & Experience Write-Up Dropdown (Closed by Default on All Screens) */}
+                          <div className="mt-4 pt-3 border-t border-[var(--border-subtle)]">
+                            <button
+                              type="button"
+                              onClick={(e) =>
+                                toggleArtworkWriteUp(artwork.id, e)
+                              }
+                              aria-expanded={isWriteUpOpen}
+                              className="w-full flex items-center justify-between gap-3 py-1.5 px-2.5 rounded-[14px] hover:bg-[var(--bg-elevated)] text-xs font-medium text-[var(--text-accent)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+                            >
+                              <span className="flex items-center gap-2">
+                                <FileText className="w-3.5 h-3.5 shrink-0" />
+                                <span>
+                                  {isWriteUpOpen
+                                    ? 'Hide Process & Artist Experience'
+                                    : 'Read Process & Artist Experience'}
+                                </span>
+                              </span>
+                              <ChevronDown
+                                className={`w-4 h-4 shrink-0 transition-transform duration-300 ${
+                                  isWriteUpOpen ? 'rotate-180' : ''
+                                }`}
+                              />
+                            </button>
+
+                            <AnimatePresence initial={false}>
+                              {isWriteUpOpen && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  transition={{
+                                    duration: 0.28,
+                                    ease: [0.16, 1, 0.3, 1],
+                                  }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="mt-2.5 p-4 rounded-[16px] bg-[var(--bg-input)] border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)] leading-relaxed whitespace-pre-line">
+                                    {artwork.description}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         </div>
                       </motion.article>
                     );
@@ -1060,29 +1231,27 @@ export default function App() {
             </section>
 
             {/* =====================================================================
-                ABOUT SECTION ("02 · Who I Am")
-                Detailed Mental Health & Artistic Evolution Story (2020 to Present)
+                ABOUT SECTION ("02 · Who I Am" — Editable via Admin)
             ====================================================================== */}
             <section
               id="about"
               className="py-20 md:py-28 border-t border-[var(--border-subtle)] scroll-mt-24"
             >
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-                {/* Left Margin Label ("02 · Who I Am") */}
+                {/* Left Margin Label */}
                 <div className="lg:col-span-3 space-y-3">
                   <p className="text-xs tracking-widest uppercase text-[var(--text-muted)]">
-                    02 · Who I Am
+                    {publishedSiteContent.aboutSectionLabel}
                   </p>
                   <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                    ArtbyMo · Established 2020
+                    {publishedSiteContent.aboutEstablishedLabel}
                   </p>
                 </div>
 
                 {/* Right Main Editorial Content */}
                 <div className="lg:col-span-9 space-y-14">
                   <h2 className="font-editorial text-3xl sm:text-5xl lg:text-6xl font-normal tracking-tight leading-[1.08] text-[var(--text-primary)] text-balance">
-                    TRANSLATING INNER TURBULENCE INTO SILENT GEOMETRY, LINE,
-                    AND CHROMATIC SANCTUARY.
+                    {publishedSiteContent.aboutHeadline}
                   </h2>
 
                   {/* Evolution & Approach Cards with Progressive Disclosure Accordions */}
@@ -1091,7 +1260,7 @@ export default function App() {
                     <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-8 transition-all">
                       <div className="flex items-center justify-between mb-4">
                         <span className="text-xs tracking-widest uppercase text-[var(--text-muted)]">
-                          Evolution (Since 2020)
+                          {publishedSiteContent.evolutionTitle}
                         </span>
                         <button
                           type="button"
@@ -1119,9 +1288,7 @@ export default function App() {
                       </div>
 
                       <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                        In 2020, sketching began not as a career ambition, but
-                        as a quiet sanctuary for the mental health struggles I
-                        was passing through at the time.
+                        {publishedSiteContent.evolutionSummary}
                       </p>
 
                       <AnimatePresence>
@@ -1133,21 +1300,8 @@ export default function App() {
                             className="overflow-hidden"
                           >
                             <div className="pt-4 mt-4 border-t border-[var(--border-subtle)] text-xs text-[var(--text-muted)] leading-relaxed max-h-48 overflow-y-auto pr-2 space-y-3">
-                              <p>
-                                Putting pen and brush to paper offered a safe
-                                vessel to pour out the weight, restlessness, and
-                                emotional turbulence inside when nothing else
-                                could express it.
-                              </p>
-                              <p>
-                                Over the years, those raw, instinctive 2020
-                                drawings evolved into a disciplined visual
-                                vocabulary. The lines grew sharper, the symbols
-                                more intentional, and the colors bolder,
-                                transforming a private coping mechanism into
-                                ArtbyMo: an ongoing chronicle of healing,
-                                resilience, and self-discovery.
-                              </p>
+                              <p>{publishedSiteContent.evolutionDetail1}</p>
+                              <p>{publishedSiteContent.evolutionDetail2}</p>
                             </div>
                           </motion.div>
                         )}
@@ -1158,7 +1312,7 @@ export default function App() {
                     <div className="rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-8 transition-all">
                       <div className="flex items-center justify-between mb-4">
                         <span className="text-xs tracking-widest uppercase text-[var(--text-muted)]">
-                          Approach & Inner Expression
+                          {publishedSiteContent.approachTitle}
                         </span>
                         <button
                           type="button"
@@ -1186,9 +1340,7 @@ export default function App() {
                       </div>
 
                       <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                        Every physical canvas and digital composition is an
-                        intimate mirror of internal states, balancing
-                        vulnerability with structural calm.
+                        {publishedSiteContent.approachSummary}
                       </p>
 
                       <AnimatePresence>
@@ -1200,19 +1352,8 @@ export default function App() {
                             className="overflow-hidden"
                           >
                             <div className="pt-4 mt-4 border-t border-[var(--border-subtle)] text-xs text-[var(--text-muted)] leading-relaxed max-h-48 overflow-y-auto pr-2 space-y-3">
-                              <p>
-                                Through interlocking cubist faces, bisected
-                                color fields, and poetic visual chapters, my
-                                work explores the duality between what we show
-                                the world and what we carry within.
-                              </p>
-                              <p>
-                                Whether working with India ink and acrylics on
-                                paper or layering digital impasto brushes, the
-                                goal remains unchanged since 2020: honest inner
-                                expression that allows both artist and viewer
-                                room to breathe.
-                              </p>
+                              <p>{publishedSiteContent.approachDetail1}</p>
+                              <p>{publishedSiteContent.approachDetail2}</p>
                             </div>
                           </motion.div>
                         )}
@@ -1224,17 +1365,17 @@ export default function App() {
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pt-4">
                     <div className="md:col-span-5 overflow-hidden rounded-[24px] bg-[var(--bg-surface)] aspect-[3/4] border border-[var(--border-subtle)]">
                       <ResilientArtworkImage
-                        src="/assets/artworks/mo_work_10.svg"
-                        alt="The Architect of Line (Mo 25)"
-                        title="The Architect of Line (Mo 25)"
+                        src={publishedSiteContent.aboutLeftImage}
+                        alt="ArtbyMo Studio Study I"
+                        title="ArtbyMo Studio Study I"
                         className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                       />
                     </div>
                     <div className="md:col-span-7 overflow-hidden rounded-[24px] bg-[var(--bg-surface)] aspect-[4/3] border border-[var(--border-subtle)]">
                       <ResilientArtworkImage
-                        src="/assets/artworks/mo_work_05.svg"
-                        alt="Prismatic Fractures I"
-                        title="Prismatic Fractures I"
+                        src={publishedSiteContent.aboutRightImage}
+                        alt="ArtbyMo Studio Study II"
+                        title="ArtbyMo Studio Study II"
                         className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                       />
                     </div>
@@ -1244,7 +1385,7 @@ export default function App() {
             </section>
 
             {/* =====================================================================
-                CONTACT SECTION (travismo1998@gmail.com + WhatsApp +2349046274402)
+                CONTACT SECTION (artbymoinspired@gmail.com + WhatsApp +2349067156870)
             ====================================================================== */}
             <section
               id="contact"
@@ -1258,16 +1399,15 @@ export default function App() {
                       03 · Inquiries & Commissions
                     </p>
                     <h2 className="font-editorial text-4xl sm:text-5xl text-[var(--text-primary)] tracking-tight text-balance">
-                      Connect with ArtbyMo
+                      {publishedSiteContent.contactHeading}
                     </h2>
                   </div>
 
                   <p className="text-sm text-[var(--text-muted)] leading-relaxed max-w-md">
-                    Available for private physical commissions, archival digital
-                    editions, collaborations, and gallery inquiries.
+                    {publishedSiteContent.contactSubtext}
                   </p>
 
-                  {/* Direct Email Card: travismo1998@gmail.com */}
+                  {/* Direct Email Card: artbymoinspired@gmail.com */}
                   <div className="p-6 rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-between gap-4">
                     <div className="min-w-0">
                       <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] mb-1 flex items-center gap-1.5">
@@ -1275,10 +1415,10 @@ export default function App() {
                         <span>Direct Studio Email</span>
                       </p>
                       <a
-                        href={`mailto:${STUDIO_EMAIL}`}
+                        href={`mailto:${publishedSiteContent.studioEmail}`}
                         className="font-mono-spec text-sm text-[var(--text-primary)] hover:text-[var(--text-accent)] transition-colors truncate block"
                       >
-                        {STUDIO_EMAIL}
+                        {publishedSiteContent.studioEmail}
                       </a>
                     </div>
 
@@ -1301,7 +1441,7 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* Direct WhatsApp Card: +2349046274402 */}
+                  {/* Direct WhatsApp Card: +234 906 715 6870 */}
                   <div className="p-6 rounded-[24px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-between gap-4">
                     <div className="min-w-0">
                       <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] mb-1 flex items-center gap-1.5">
@@ -1309,17 +1449,17 @@ export default function App() {
                         <span>Studio WhatsApp</span>
                       </p>
                       <a
-                        href={STUDIO_WHATSAPP_URL}
+                        href={publishedSiteContent.studioWhatsappUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-mono-spec text-sm text-[var(--text-primary)] hover:text-[var(--text-accent)] transition-colors truncate block"
                       >
-                        {STUDIO_WHATSAPP_DISPLAY}
+                        {publishedSiteContent.studioWhatsappDisplay}
                       </a>
                     </div>
 
                     <a
-                      href={STUDIO_WHATSAPP_URL}
+                      href={publishedSiteContent.studioWhatsappUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-medium rounded-[18px] bg-[var(--btn-secondary-bg)] text-[var(--btn-secondary-text)] border border-[var(--border-subtle)] hover:bg-[var(--btn-primary-bg)] hover:text-[var(--btn-primary-text)] transition-colors whitespace-nowrap shrink-0"
@@ -1467,7 +1607,7 @@ export default function App() {
           </main>
 
           {/* =====================================================================
-              FOOTER WITH SOCIAL MEDIA LINKS & ARTIST ADMIN LOGIN
+              FOOTER WITH SOCIAL MEDIA LINKS (INCLUDING TIKTOK & FACEBOOK) & ADMIN LOGIN
           ====================================================================== */}
           <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-footer)] transition-colors duration-300">
             <div className="max-w-[1440px] mx-auto px-6 md:px-12 py-14 space-y-10">
@@ -1478,8 +1618,7 @@ export default function App() {
                     * ArtbyMo
                   </span>
                   <p className="text-xs text-[var(--text-muted)] max-w-sm">
-                    Contemporary physical canvases and digital editions born
-                    from inner expression.
+                    {publishedSiteContent.footerTagline}
                   </p>
                 </div>
 
@@ -1497,13 +1636,37 @@ export default function App() {
                   </a>
 
                   <a
-                    href={STUDIO_WHATSAPP_URL}
+                    href={publishedSiteContent.studioWhatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-4 py-2.5 rounded-[18px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs text-[var(--text-primary)] hover:border-[var(--border-strong)] transition-colors"
                   >
                     <MessageCircle className="w-3.5 h-3.5 text-[var(--text-accent)]" />
-                    <span>WhatsApp ({STUDIO_WHATSAPP_DISPLAY})</span>
+                    <span>
+                      WhatsApp ({publishedSiteContent.studioWhatsappDisplay})
+                    </span>
+                    <ArrowUpRight className="w-3 h-3 opacity-60" />
+                  </a>
+
+                  <a
+                    href={socialLinks.tiktok}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-[18px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs text-[var(--text-primary)] hover:border-[var(--border-strong)] transition-colors"
+                  >
+                    <Music2 className="w-3.5 h-3.5 text-[var(--text-accent)]" />
+                    <span>TikTok</span>
+                    <ArrowUpRight className="w-3 h-3 opacity-60" />
+                  </a>
+
+                  <a
+                    href={socialLinks.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-[18px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs text-[var(--text-primary)] hover:border-[var(--border-strong)] transition-colors"
+                  >
+                    <Facebook className="w-3.5 h-3.5 text-[var(--text-accent)]" />
+                    <span>Facebook</span>
                     <ArrowUpRight className="w-3 h-3 opacity-60" />
                   </a>
 
@@ -1530,36 +1693,71 @@ export default function App() {
                   </a>
 
                   <a
-                    href={`mailto:${STUDIO_EMAIL}`}
+                    href={`mailto:${publishedSiteContent.studioEmail}`}
                     className="inline-flex items-center gap-2 px-4 py-2.5 rounded-[18px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs text-[var(--text-primary)] hover:border-[var(--border-strong)] transition-colors"
                   >
                     <Mail className="w-3.5 h-3.5 text-[var(--text-accent)]" />
-                    <span>{STUDIO_EMAIL}</span>
+                    <span>{publishedSiteContent.studioEmail}</span>
                   </a>
                 </div>
               </div>
 
-              {/* Bottom Footer Row: Copyright + Navigation + Discreet Artist Admin Login */}
+              {/* Bottom Footer Row: Copyright + Developer Credit + Navigation + Discreet Artist Admin Login */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--text-muted)]">
-                <span>
-                  © {new Date().getFullYear()} ArtbyMo. All rights reserved.
-                </span>
-                <div className="flex flex-wrap items-center gap-6">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-2">
+                  <span>
+                    © {new Date().getFullYear()} ArtbyMo. All rights reserved.
+                  </span>
+
+                  <span
+                    aria-hidden="true"
+                    className="text-[var(--border-strong)] select-none"
+                  >
+                    ·
+                  </span>
+
+                  {/* Responsive Developer Credit Link with Underlined Muted Glowing Rainbow Effect */}
+                  <a
+                    href="https://my-react-portfolio-six-vert.vercel.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Visit Dayo's Digital Dynasty Portfolio"
+                    className="inline-block pb-0.5 transition-opacity"
+                  >
+                    {/* Desktop / Big Screens: "Developed by Dayo's Digital Dynasty" */}
+                    <span className="hidden lg:inline text-sm dynasty-rainbow-text">
+                      Developed by Dayo&apos;s Digital Dynasty
+                    </span>
+                    {/* Tablet View: "Developed by Digital Dynasty" */}
+                    <span className="hidden md:inline lg:hidden text-sm dynasty-rainbow-text">
+                      Developed by Digital Dynasty
+                    </span>
+                    {/* Mobile Screens: "Developed by Dynasty" */}
+                    <span className="inline md:hidden text-sm dynasty-rainbow-text">
+                      Developed by Dynasty
+                    </span>
+                  </a>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-6">
                   <a
                     href="#works"
-                    className="hover:text-[var(--text-primary)] transition-colors"
+                    onClick={(e) => handleNavigateToSection('works', e)}
+                    className="hover:text-[var(--text-primary)] transition-colors cursor-pointer"
                   >
                     Exhibition
                   </a>
                   <a
                     href="#about"
-                    className="hover:text-[var(--text-primary)] transition-colors"
+                    onClick={(e) => handleNavigateToSection('about', e)}
+                    className="hover:text-[var(--text-primary)] transition-colors cursor-pointer"
                   >
                     Who I Am
                   </a>
                   <a
                     href="#contact"
-                    className="hover:text-[var(--text-primary)] transition-colors"
+                    onClick={(e) => handleNavigateToSection('contact', e)}
+                    className="hover:text-[var(--text-primary)] transition-colors cursor-pointer"
                   >
                     Inquiries
                   </a>
@@ -1760,7 +1958,7 @@ export default function App() {
                         </div>
                       </dl>
 
-                      {/* Collapsible Curatorial Description Accordion */}
+                      {/* Collapsible Process & Experience Write-Up Accordion */}
                       <div className="rounded-[20px] bg-[var(--bg-input)] border border-[var(--border-subtle)] p-5">
                         <button
                           type="button"
@@ -1768,7 +1966,7 @@ export default function App() {
                           className="w-full flex items-center justify-between text-xs font-medium text-[var(--text-primary)] cursor-pointer"
                           aria-expanded={isDetailNotesOpen}
                         >
-                          <span>Curatorial & Material Notes</span>
+                          <span>Process & Artist Experience</span>
                           <ChevronDown
                             className={`w-4 h-4 text-[var(--text-muted)] transition-transform duration-200 ${
                               isDetailNotesOpen ? 'rotate-180' : ''
@@ -1784,8 +1982,8 @@ export default function App() {
                               exit={{ opacity: 0, height: 0 }}
                               className="overflow-hidden"
                             >
-                              <div className="pt-3 mt-3 border-t border-[var(--border-subtle)] max-h-36 overflow-y-auto">
-                                <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                              <div className="pt-3 mt-3 border-t border-[var(--border-subtle)] max-h-40 overflow-y-auto">
+                                <p className="text-xs text-[var(--text-secondary)] leading-relaxed whitespace-pre-line">
                                   {selectedArtwork.description}
                                 </p>
                               </div>
@@ -1799,15 +1997,16 @@ export default function App() {
                     <div className="pt-8 mt-8 border-t border-[var(--border-subtle)] flex items-center justify-between gap-4">
                       <a
                         href="#contact"
-                        onClick={() => {
+                        onClick={(e) => {
                           setSelectedArtworkId(null);
                           setContactForm((prev) => ({
                             ...prev,
                             inquiryType: 'Acquisition',
                             message: `Inquiring about "${selectedArtwork.title}" (${selectedArtwork.catalogNumber}, ${selectedArtwork.dimensions}).`,
                           }));
+                          handleNavigateToSection('contact', e);
                         }}
-                        className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-xs font-medium text-[var(--btn-primary-text)] bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover-bg)] hover:text-[var(--btn-primary-hover-text)] rounded-[20px] transition-colors"
+                        className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-xs font-medium text-[var(--btn-primary-text)] bg-[var(--btn-primary-bg)] hover:bg-[var(--btn-primary-hover-bg)] hover:text-[var(--btn-primary-hover-text)] rounded-[20px] transition-colors cursor-pointer"
                       >
                         <span>Inquire About This Work</span>
                         <ArrowUpRight className="w-4 h-4" />
